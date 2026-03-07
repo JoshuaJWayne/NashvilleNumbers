@@ -753,3 +753,60 @@ header {
 
 .shake { animation: shake 0.35s ease; }
 .pop   { animation: pop   0.25s ease; }
+
+/* ─── Pitch Trainer Link ──────────────────────────────────────────────────── */
+
+.pitch-trainer-link {
+  width: 100%;
+  max-width: 700px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.pitch-trainer-link:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(245,200,66,0.1);
+}
+
+.pitch-trainer-link-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.pitch-trainer-link-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: var(--accent);
+}
+
+.pitch-trainer-link-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.pitch-trainer-link-arrow {
+  margin-left: auto;
+  font-size: 20px;
+  color: var(--accent);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.pitch-trainer-link:hover .pitch-trainer-link-arrow {
+  transform: translateX(4px);
+}
