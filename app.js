@@ -505,61 +505,74 @@ function chordNoteNames(chordName) {
 }
 
 // Draws a 2-octave SVG piano keyboard with chord tones highlighted in gold.
-// Starts from C4 through B5.
+// Starts from C4 through B5. Highlighted keys are clickable and play their note.
 function buildPianoSVG(chordName) {
   const highlighted = chordNoteNames(chordName);
 
-  // White key note names in order across 2 octaves (C4–B5)
-  const WHITE_NOTES = ['C','D','E','F','G','A','B', 'C','D','E','F','G','A','B'];
-  // Black key positions: index of the white key to the LEFT, and note name
-  // Pattern per octave: C#, D#, (gap), F#, G#, A#, (gap)
+  // White key note names across 2 octaves — track octave per position
+  const WHITE_NOTES = [
+    {note:'C',oct:4},{note:'D',oct:4},{note:'E',oct:4},{note:'F',oct:4},{note:'G',oct:4},{note:'A',oct:4},{note:'B',oct:4},
+    {note:'C',oct:5},{note:'D',oct:5},{note:'E',oct:5},{note:'F',oct:5},{note:'G',oct:5},{note:'A',oct:5},{note:'B',oct:5},
+  ];
+
   const BLACK_PATTERN = [
-    {pos:0, note:'C#'},{pos:1, note:'D#'},
-    {pos:3, note:'F#'},{pos:4, note:'G#'},{pos:5, note:'A#'},
+    {pos:0,note:'C#'},{pos:1,note:'D#'},
+    {pos:3,note:'F#'},{pos:4,note:'G#'},{pos:5,note:'A#'},
   ];
   const BLACK_KEYS = [
-    ...BLACK_PATTERN.map(b => ({pos: b.pos,   note: b.note})),
-    ...BLACK_PATTERN.map(b => ({pos: b.pos+7, note: b.note})),
+    ...BLACK_PATTERN.map(b => ({pos:b.pos,   note:b.note, oct:4})),
+    ...BLACK_PATTERN.map(b => ({pos:b.pos+7, note:b.note, oct:5})),
   ];
 
-  const W  = 28;   // white key width
-  const WH = 90;   // white key height
-  const BW = 18;   // black key width
-  const BH = 56;   // black key height
+  const W  = 28, WH = 90, BW = 18, BH = 56;
   const totalW = WHITE_NOTES.length * W;
 
-  let svg = `<svg class="piano-svg" viewBox="0 0 ${totalW} ${WH}" xmlns="http://www.w3.org/2000/svg">`;
+  let svg = `<svg class="piano-svg" viewBox="0 0 ${totalW} ${WH}" xmlns="http://www.w3.org/2000/svg" style="cursor:default;">`;
 
   // White keys
-  WHITE_NOTES.forEach((note, i) => {
-    const isLit = highlighted.has(note);
-    const fill  = isLit ? '#f5c842' : '#f0ede6';
-    const stroke = '#555';
+  WHITE_NOTES.forEach(({note, oct}, i) => {
+    const isLit  = highlighted.has(note);
+    const fill   = isLit ? '#f5c842' : '#f0ede6';
+    const cursor = isLit ? 'pointer' : 'default';
+    const click  = isLit ? `onclick="playSingleNote('${note}${oct}')"` : '';
+    const hover  = isLit ? `onmouseenter="this.setAttribute('fill','#ffd700')" onmouseleave="this.setAttribute('fill','#f5c842')"` : '';
     svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}"
-      fill="${fill}" stroke="${stroke}" stroke-width="1" rx="2"/>`;
+      fill="${fill}" stroke="#555" stroke-width="1" rx="2"
+      style="cursor:${cursor}" ${click} ${hover}/>`;
     if (isLit) {
-      svg += `<text x="${i*W + W/2}" y="${WH - 8}" text-anchor="middle"
-        font-size="8" font-family="IBM Plex Mono, monospace"
-        font-weight="600" fill="#000">${note}</text>`;
+      svg += `<text x="${i*W + W/2}" y="${WH-8}" text-anchor="middle"
+        font-size="8" font-family="IBM Plex Mono, monospace" font-weight="600"
+        fill="#000" style="pointer-events:none">${note}</text>`;
     }
   });
 
   // Black keys (drawn on top)
-  BLACK_KEYS.forEach(({pos, note}) => {
-    const isLit = highlighted.has(note);
-    const fill  = isLit ? '#f5c842' : '#1a1a1a';
-    const x     = pos * W + W - BW / 2;
+  BLACK_KEYS.forEach(({pos, note, oct}) => {
+    const isLit  = highlighted.has(note);
+    const fill   = isLit ? '#f5c842' : '#1a1a1a';
+    const cursor = isLit ? 'pointer' : 'default';
+    const click  = isLit ? `onclick="playSingleNote('${note}${oct}')"` : '';
+    const hover  = isLit ? `onmouseenter="this.setAttribute('fill','#ffd700')" onmouseleave="this.setAttribute('fill','#f5c842')"` : '';
+    const x      = pos * W + W - BW / 2;
     svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}"
-      fill="${fill}" stroke="#000" stroke-width="1" rx="2"/>`;
+      fill="${fill}" stroke="#000" stroke-width="1" rx="2"
+      style="cursor:${cursor}" ${click} ${hover}/>`;
     if (isLit) {
-      svg += `<text x="${x + BW/2}" y="${BH - 5}" text-anchor="middle"
-        font-size="7" font-family="IBM Plex Mono, monospace"
-        font-weight="600" fill="#000">${note}</text>`;
+      svg += `<text x="${x+BW/2}" y="${BH-5}" text-anchor="middle"
+        font-size="7" font-family="IBM Plex Mono, monospace" font-weight="600"
+        fill="#000" style="pointer-events:none">${note}</text>`;
     }
   });
 
   svg += '</svg>';
   return svg;
+}
+
+// Play a single note by its full pitch string e.g. "C#4", "G5"
+async function playSingleNote(pitch) {
+  await Tone.start();
+  const piano = getSynth();
+  piano.triggerAttackRelease(pitch, '4n');
 }
 
 // Track which chord panel is currently open (key_degree string)
