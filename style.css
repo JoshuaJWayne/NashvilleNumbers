@@ -234,8 +234,11 @@ header {
   display: inline-block;
   background: var(--accent2);
   color: #fff;
-  font-size: 0.65em;
-  padding: 2px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.45em;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 4px 10px;
   border-radius: 3px;
   vertical-align: middle;
   margin-left: 10px;
@@ -509,12 +512,16 @@ header {
   max-width: 700px;
   display: none;
   margin-top: 10px;
+  /* Allow horizontal scroll on mobile instead of overflowing */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ref-table-wrap.show { display: block; }
 
 .ref-table {
   width: 100%;
+  min-width: 520px; /* prevents columns from collapsing too small */
   border-collapse: collapse;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -523,19 +530,21 @@ header {
 .ref-table th {
   background: var(--surface);
   border: 1px solid var(--border);
-  padding: 8px 12px;
+  padding: 8px 6px;
   text-align: center;
   color: var(--accent);
   font-weight: 600;
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .ref-table td {
   background: var(--surface);
   border: 1px solid var(--border);
-  padding: 7px 12px;
+  padding: 6px 4px;
   text-align: center;
   color: var(--text);
+  white-space: nowrap;
 }
 
 .ref-table tr:hover td { background: var(--surface2); }
@@ -543,21 +552,19 @@ header {
 .ref-table .row-key {
   color: var(--accent);
   font-weight: 600;
+  padding: 6px 8px;
 }
 
 /* Chord cell layout */
-.ref-table td {
-  white-space: nowrap;
-}
-
 .ref-chord-name {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  font-size: 11px;
 }
 
 .ref-btn-group {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   justify-content: center;
 }
 
@@ -566,8 +573,8 @@ header {
   border: 1px solid var(--border);
   border-radius: 3px;
   color: var(--muted);
-  font-size: 11px;
-  padding: 2px 6px;
+  font-size: 10px;
+  padding: 2px 4px;
   cursor: pointer;
   transition: all 0.15s;
   line-height: 1.4;
@@ -590,8 +597,8 @@ header {
   border: 1px solid var(--border);
   border-radius: 3px;
   color: var(--muted);
-  font-size: 11px;
-  padding: 2px 6px;
+  font-size: 10px;
+  padding: 2px 4px;
   cursor: pointer;
   transition: all 0.15s;
   line-height: 1.4;
@@ -607,6 +614,45 @@ header {
   background: var(--accent);
   border-color: var(--accent);
   color: #000;
+}
+
+/* Mobile scroll hint */
+.ref-scroll-hint {
+  display: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-align: center;
+  padding: 6px 0 2px;
+}
+
+@media (max-width: 600px) {
+  .ref-scroll-hint { display: block; }
+
+  .ref-table {
+    font-size: 11px;
+  }
+
+  .ref-table th {
+    padding: 6px 4px;
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+
+  .ref-table td {
+    padding: 5px 3px;
+  }
+
+  .ref-chord-name {
+    font-size: 10px;
+  }
+
+  .ref-play-btn,
+  .ref-piano-btn {
+    font-size: 9px;
+    padding: 1px 3px;
+  }
 }
 
 /* ─── Chord Panel ─────────────────────────────────────────────────────────── */

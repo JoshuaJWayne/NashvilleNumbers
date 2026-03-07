@@ -188,10 +188,11 @@ function newQuestion() {
     currentQ.direction === 'n2c' ? 'NUMBERS → CHORDS' : 'CHORDS → NUMBERS';
   document.getElementById('qCount').textContent = `Q ${qNum}`;
 
+  const isSingle = document.getElementById('progLength').value === '1';
   document.getElementById('qText').textContent =
     currentQ.direction === 'n2c'
-      ? 'What chords make up this progression?'
-      : 'What Nashville numbers represent these chords?';
+      ? (isSingle ? 'What chord makes up this progression?' : 'What chords make up this progression?')
+      : (isSingle ? 'What Nashville number represents this chord?' : 'What Nashville numbers represent these chords?');
   document.getElementById('qMain').innerHTML = currentQ.question;
   document.getElementById('hintRow').textContent = '';
 
