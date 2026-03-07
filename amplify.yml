@@ -12,5 +12,7 @@ frontend:
       - "app.js"
       - "pitch/index.html"
       - "pitch/pitch.js"
+	  - "transpose/index.html"
+	  - "transpose/transpose.js"
   cache:
     paths: []

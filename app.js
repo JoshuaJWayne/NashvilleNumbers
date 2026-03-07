@@ -100,9 +100,10 @@ function randomProgression(length) {
 }
 
 function generateQuestion() {
-  const key      = randomKey();
+  const key        = randomKey();
   const lenSetting = document.getElementById('progLength').value;
-  const prog     = randomProgression(lenSetting);
+  const prog       = randomProgression(lenSetting);
+  const isSingle   = prog.length === 1;
 
   let direction;
   if (activeMode === 'mixed') {
@@ -118,22 +119,24 @@ function generateQuestion() {
   const romanLabels  = prog.map(i => NUMERAL_ROMAN[i]);
 
   if (direction === 'n2c') {
+    const verb = isSingle ? 'What chord is' : 'What chords are';
     return {
       direction,
       key,
       prog,
-      question:      `What chords are <span class="numbers">${numberLabels.join(' – ')}</span> in the key of <span class="key-badge">${key}</span>?`,
+      question:      `${verb} <span class="numbers">${numberLabels.join(' – ')}</span> in the key of <span class="key-badge">${key}</span>?`,
       questionPlain: `${numberLabels.join(' – ')} in key of ${key}`,
       answer:        chordNames.join(' – '),
       hint:          `Roman: ${romanLabels.join(' – ')}`,
       wrongAnswers:  generateWrongAnswers(chordNames.join(' – '), prog, key, 'n2c'),
     };
   } else {
+    const verb = isSingle ? 'What number is' : 'What numbers are';
     return {
       direction,
       key,
       prog,
-      question:      `What numbers are <span class="numbers">${chordNames.join(' – ')}</span> in the key of <span class="key-badge">${key}</span>?`,
+      question:      `${verb} <span class="numbers">${chordNames.join(' – ')}</span> in the key of <span class="key-badge">${key}</span>?`,
       questionPlain: `${chordNames.join(' – ')} in key of ${key}`,
       answer:        numberLabels.join(' – '),
       hint:          `Roman: ${romanLabels.join(' – ')}`,
