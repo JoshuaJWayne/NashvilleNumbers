@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -163,6 +163,7 @@
     cursor: pointer;
     transition: all 0.15s;
     user-select: none;
+    color: #fff;
   }
 
   .key-toggle.active {
@@ -1000,6 +1001,179 @@ function buildTypeInput(area) {
   inp.placeholder = currentQ.direction === 'n2c' ? 'e.g.  C – Am – F – G' : 'e.g.  1 – 6 – 4 – 5';
   inp.autocomplete = 'off';
   inp.onkeydown = e => { if (e.key === 'Enter') checkType(); };
+
+  const btn = document.createElement('button');
+  btn.className = 'submit-btn';
+  btn.textContent = 'CHECK';
+  btn.onclick = checkType;
+
+  row.appendChild(inp);
+  row.appendChild(btn);
+  area.appendChild(row);
+
+  // Symbol toolbar — only show for chords (n2c) direction since numbers don't need symbols
+  if (currentQ.direction === 'n2c') {
+    const symbols = [
+      { char: '°', label: 'Diminished', highlight: true },
+      { char: 'm',  label: 'Minor' },
+      { char: '#',  label: 'Sharp' },
+      { char: 'b',  label: 'Flat (♭)' },
+      { char: ' – ', label: 'Separator' },
+    ];
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'symbol-toolbar';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'symbol-toolbar-label';
+    lbl.textContent = 'Insert:';
+    toolbar.appendChild(lbl);
+
+    symbols.forEach(({ char, label, highlight }) => {
+      const s = document.createElement('button');
+      s.className = 'sym-btn' + (highlight ? ' sym-highlight' : '');
+      s.innerHTML = `${char === ' – ' ? '–' : char}<span class="sym-tooltip">${label}</span>`;
+      s.type = 'button';
+      s.onclick = () => insertAtCursor(inp, char);
+      toolbar.appendChild(s);
+    });
+
+    area.appendChild(toolbar);
+  }
+
+  // hint button
+  const hint = document.createElement('div');
+  hint.className = 'hint-row';
+  hint.innerHTML = '<span style="color:var(--accent);cursor:pointer;" onclick="showHint()">💡 Show hint</span>';
+  area.appendChild(hint);
+
+  setTimeout(() => inp.focus(), 50);
+}
+
+function insertAtCursor(input, text) {
+  input.focus();
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  const current = input.value;
+  input.value = current.slice(0, start) + text + current.slice(end);
+  const newPos = start + text.length;
+  input.setSelectionRange(newPos, newPos);
+}
+
+function showHint() {
+  document.getElementById('hintRow').textContent = currentQ.hint;
+}
+
+function normalizeAnswer(str) {
+  return str.toLowerCase()
+    .replace(/\s*[–\-,/]+\s*/g, '|')
+    .replace(/\s+/g, '')
+    .replace(/maj/g, '')
+    .replace(/major/g, '')
+    .replace(/minor/g, 'm')
+    .trim();
+}
+
+function checkType() {
+  if (answered) return;
+  const inp = document.getElementById('typeInput');
+  const val = inp.value.trim();
+  if (!val) return;
+
+  answered = true;
+  total++;
+
+  const normVal = normalizeAnswer(val);
+  const normAns = normalizeAnswer(currentQ.answer);
+  const isCorrect = normVal === normAns;
+
+  inp.classList.add(isCorrect ? 'correct' : 'wrong');
+  inp.disabled = true;
+
+  if (isCorrect) {
+    score++;
+    streak++;
+    document.getElementById('quizCard').className = 'quiz-card correct';
+    showFeedback(true, currentQ.answer, currentQ.hint);
+  } else {
+    streak = 0;
+    document.getElementById('quizCard').className = 'quiz-card wrong';
+    document.getElementById('quizCard').classList.add('shake');
+    setTimeout(() => document.getElementById('quizCard').classList.remove('shake'), 400);
+    showFeedback(false, currentQ.answer, currentQ.hint);
+  }
+
+  updateScore();
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+function showFeedback(correct, answer, hint) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  document.getElementById('feedbackAnswer').textContent =
+    correct ? '✓ Correct! ' + answer : '✗ Correct answer: ' + answer;
+  document.getElementById('feedbackExpl').textContent = hint;
+}
+
+function updateScore() {
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('totalVal').textContent = total;
+  document.getElementById('streakVal').textContent = streak;
+  const acc = total > 0 ? Math.round((score/total)*100) + '%' : '—';
+  document.getElementById('accuracyVal').textContent = acc;
+}
+
+// ─── Reference Chart ─────────────────────────────────────────────────────────
+
+function buildRefChart() {
+  const keys = ['C','D','E','F','G','A','B','Bb','Eb','Ab','Db','F#'];
+  let html = '<table class="ref-table"><thead><tr><th>Key</th>';
+  for (let d = 0; d < 7; d++) {
+    html += `<th>${NUMERAL_LABELS[d]} (${NUMERAL_ROMAN[d]})</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  keys.forEach(k => {
+    html += `<tr><td class="row-key">${k}</td>`;
+    for (let d = 0; d < 7; d++) {
+      html += `<td>${getChordName(k, d)}</td>`;
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('refTable').innerHTML = html;
+}
+
+function toggleRef() {
+  const el = document.getElementById('refTable');
+  if (el.classList.contains('show')) {
+    el.classList.remove('show');
+  } else {
+    el.classList.add('show');
+  }
+}
+
+// ─── Utils ───────────────────────────────────────────────────────────────────
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+
+buildKeyToggles();
+buildRefChart();
+newQuestion();
+</script>
+</body>
+</html>
+inp.onkeydown = e => { if (e.key === 'Enter') checkType(); };
 
   const btn = document.createElement('button');
   btn.className = 'submit-btn';
