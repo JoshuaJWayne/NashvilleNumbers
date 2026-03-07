@@ -398,49 +398,32 @@ function updateScore() {
 
 // ─── Audio Engine ─────────────────────────────────────────────────────────────
 
-// Map every note name to a Tone.js pitch (octave 4, with enharmonic equivalents)
-const NOTE_TO_PITCH = {
-  'C': 'C4', 'C#': 'C#4', 'Db': 'Db4',
-  'D': 'D4', 'D#': 'D#4', 'Eb': 'Eb4',
-  'E': 'E4',
-  'F': 'F4', 'F#': 'F#4', 'Gb': 'Gb4',
-  'G': 'G4', 'G#': 'G#4', 'Ab': 'Ab4',
-  'A': 'A4', 'A#': 'A#4', 'Bb': 'Bb4',
-  'B': 'B4', 'Cb': 'B3',
+const CHROMATIC  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const ENHARMONIC = {
+  'Db':'C#', 'Eb':'D#', 'Fb':'E',
+  'Gb':'F#', 'Ab':'G#', 'Bb':'A#', 'Cb':'B'
 };
 
-// Build the notes for a chord given its name (e.g. "Em", "F#", "B°")
-function chordToNotes(chordName) {
-  // Parse root and quality
+function noteToIndex(note) {
+  return CHROMATIC.indexOf(ENHARMONIC[note] || note);
+}
+
+// Build notes for a chord, rooted at the given baseOctave.
+// baseOctave rises across the scale so degree 1 is lowest, degree 7 is highest.
+function chordToNotes(chordName, baseOctave = 4) {
   let root, quality;
   if (chordName.endsWith('°')) {
-    root    = chordName.slice(0, -1);
-    quality = 'dim';
+    root = chordName.slice(0, -1); quality = 'dim';
   } else if (chordName.endsWith('m')) {
-    root    = chordName.slice(0, -1);
-    quality = 'min';
+    root = chordName.slice(0, -1); quality = 'min';
   } else {
-    root    = chordName;
-    quality = 'maj';
+    root = chordName; quality = 'maj';
   }
 
-  // Chromatic scale for interval math
-  const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-
-  // Map all flat/enharmonic spellings to their sharp equivalent
-  const ENHARMONIC = {
-    'Db':'C#', 'Eb':'D#', 'Fb':'E',
-    'Gb':'F#', 'Ab':'G#', 'Bb':'A#', 'Cb':'B'
-  };
-
-  const normalRoot = ENHARMONIC[root] || root;
-  const rootIdx    = CHROMATIC.indexOf(normalRoot);
+  const rootIdx = noteToIndex(root);
   if (rootIdx === -1) return [];
 
-  // Intervals in semitones:
-  // major = root, major 3rd, perfect 5th
-  // minor = root, minor 3rd, perfect 5th
-  // dim   = root, minor 3rd, diminished 5th
+  // semitone intervals per quality
   const intervals = quality === 'maj' ? [0, 4, 7]
                   : quality === 'min' ? [0, 3, 7]
                   :                     [0, 3, 6];
@@ -448,25 +431,37 @@ function chordToNotes(chordName) {
   return intervals.map(interval => {
     const semitone = rootIdx + interval;
     const noteIdx  = semitone % 12;
-    const octave   = semitone >= 12 ? 5 : 4;
+    const octave   = baseOctave + Math.floor(semitone / 12);
     return CHROMATIC[noteIdx] + octave;
   });
 }
 
-// Lazily created synth — only created after first user gesture
+// Calculate which octave a scale degree should be rooted in so that
+// degrees 1–7 always ascend in pitch within the key.
+// Strategy: start key root at octave 4; each degree that is chromatically
+// lower than the key root gets bumped up one octave.
+function octaveForDegree(keyRoot, degreeIndex) {
+  const keyRootIdx    = noteToIndex(keyRoot);
+  const degreeRootRaw = getKeyNotes(keyRoot)[degreeIndex];
+  const degreeRootIdx = noteToIndex(degreeRootRaw);
+
+  // If the degree note sits below the key root on the chromatic scale
+  // it has "wrapped around" and must live in the next octave
+  return degreeRootIdx < keyRootIdx ? 5 : 4;
+}
+
+// Lazily created synth — only instantiated after first user gesture
 let synth = null;
 
 function getSynth() {
   if (!synth) {
     synth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: {
-        type: 'sine',
-      },
+      oscillator: { type: 'sine' },
       envelope: {
-        attack:  0.005,  // very fast attack like a hammer strike
-        decay:   1.2,    // long decay — the note fades naturally
-        sustain: 0.0,    // piano notes don't sustain, they decay to silence
-        release: 1.5,    // tail when key is released
+        attack:  0.005,  // instant strike like a piano hammer
+        decay:   1.2,    // long natural decay
+        sustain: 0.0,    // no sustain — pure decay like a real piano
+        release: 1.5,    // tail after note ends
       },
       volume: -6,
     }).toDestination();
@@ -474,9 +469,12 @@ function getSynth() {
   return synth;
 }
 
-async function playChord(chordName, btn) {
+// chordName: e.g. "Em", "F#", "B°"
+// btn: the ♪ button element for visual feedback (optional)
+// baseOctave: pass explicitly from buildRefChart for correct low→high order
+async function playChord(chordName, btn, baseOctave = 4) {
   await Tone.start();
-  const notes = chordToNotes(chordName);
+  const notes = chordToNotes(chordName, baseOctave);
   if (!notes.length) return;
 
   if (btn) {
@@ -488,21 +486,6 @@ async function playChord(chordName, btn) {
   piano.triggerAttackRelease(notes, '2n');
 }
 
-async function playChord(chordName, btn) {
-  await Tone.start();
-  const notes = chordToNotes(chordName);
-  if (!notes.length) return;
-
-  // Visual feedback on the button
-  if (btn) {
-    btn.classList.add('playing');
-    setTimeout(() => btn.classList.remove('playing'), 1200);
-  }
-
-  const s = getSynth();
-  s.triggerAttackRelease(notes, '2n');
-}
-
 // ─── Reference Chart ──────────────────────────────────────────────────────────
 
 function buildRefChart() {
@@ -512,17 +495,23 @@ function buildRefChart() {
     html += `<th>${NUMERAL_LABELS[d]} (${NUMERAL_ROMAN[d]})</th>`;
   }
   html += '</tr></thead><tbody>';
+
   keys.forEach(k => {
     html += `<tr><td class="row-key">${k}</td>`;
     for (let d = 0; d < 7; d++) {
-      const chord = getChordName(k, d);
+      const chord  = getChordName(k, d);
+      const octave = octaveForDegree(k, d);
+      // Pass the octave as a data attribute so the inline onclick can use it
       html += `<td>
         <span class="ref-chord-name">${chord}</span>
-        <button class="ref-play-btn" onclick="playChord('${chord}', this)" title="Play ${chord}">♪</button>
+        <button class="ref-play-btn"
+          onclick="playChord('${chord}', this, ${octave})"
+          title="Play ${chord}">♪</button>
       </td>`;
     }
     html += '</tr>';
   });
+
   html += '</tbody></table>';
   document.getElementById('refTable').innerHTML = html;
 }
