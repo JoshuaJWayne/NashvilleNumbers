@@ -414,6 +414,15 @@ function renderTransposed() {
   document.getElementById('outTargetKey').innerHTML =
     `<span class="ov-key">${targetKey}</span>`;
 
+  // Numbers are identical to the source — that's the whole point of Nashville Numbers
+  const numbersHTML = progression.map(item => {
+    const num = item.isChromatic
+      ? `<span style="color:var(--muted)">${item.chromaticLabel || '?'}</span>`
+      : `<span class="ov-number">${NUMERAL_LABELS[item.degreeIndex]}</span>`;
+    return num + '<span class="ov-sep">–</span>';
+  }).join('').replace(/<span class="ov-sep">–<\/span>$/, '');
+  document.getElementById('outTransposedNumbers').innerHTML = numbersHTML;
+
   const transposedChords = progression.map(item => transposeChord(item, targetKey));
   const transHTML = transposedChords.map(c =>
     `<span>${c}</span><span class="ov-sep">–</span>`
