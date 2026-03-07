@@ -426,23 +426,30 @@ function chordToNotes(chordName) {
 
   // Chromatic scale for interval math
   const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  const ENHARMONIC = { 'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B' };
+
+  // Map all flat/enharmonic spellings to their sharp equivalent
+  const ENHARMONIC = {
+    'Db':'C#', 'Eb':'D#', 'Fb':'E',
+    'Gb':'F#', 'Ab':'G#', 'Bb':'A#', 'Cb':'B'
+  };
 
   const normalRoot = ENHARMONIC[root] || root;
   const rootIdx    = CHROMATIC.indexOf(normalRoot);
   if (rootIdx === -1) return [];
 
-  // Intervals: maj = 0,4,7  min = 0,3,7  dim = 0,3,6
-  const intervals = quality === 'maj' ? [0,4,7]
-                  : quality === 'min' ? [0,3,7]
-                  :                     [0,3,6];
+  // Intervals in semitones:
+  // major = root, major 3rd, perfect 5th
+  // minor = root, minor 3rd, perfect 5th
+  // dim   = root, minor 3rd, diminished 5th
+  const intervals = quality === 'maj' ? [0, 4, 7]
+                  : quality === 'min' ? [0, 3, 7]
+                  :                     [0, 3, 6];
 
   return intervals.map(interval => {
-    const noteIdx  = (rootIdx + interval) % 12;
-    const noteName = CHROMATIC[noteIdx];
-    // Root stays in octave 4; upper notes bump to 5 if they wrap around
-    const octave   = (rootIdx + interval >= 12) ? 5 : 4;
-    return noteName + octave;
+    const semitone = rootIdx + interval;
+    const noteIdx  = semitone % 12;
+    const octave   = semitone >= 12 ? 5 : 4;
+    return CHROMATIC[noteIdx] + octave;
   });
 }
 
@@ -452,12 +459,33 @@ let synth = null;
 function getSynth() {
   if (!synth) {
     synth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'triangle' },
-      envelope:   { attack: 0.02, decay: 0.3, sustain: 0.4, release: 1.2 },
-      volume:     -6,
+      oscillator: {
+        type: 'sine',
+      },
+      envelope: {
+        attack:  0.005,  // very fast attack like a hammer strike
+        decay:   1.2,    // long decay — the note fades naturally
+        sustain: 0.0,    // piano notes don't sustain, they decay to silence
+        release: 1.5,    // tail when key is released
+      },
+      volume: -6,
     }).toDestination();
   }
   return synth;
+}
+
+async function playChord(chordName, btn) {
+  await Tone.start();
+  const notes = chordToNotes(chordName);
+  if (!notes.length) return;
+
+  if (btn) {
+    btn.classList.add('playing');
+    setTimeout(() => btn.classList.remove('playing'), 1500);
+  }
+
+  const piano = getSynth();
+  piano.triggerAttackRelease(notes, '2n');
 }
 
 async function playChord(chordName, btn) {
