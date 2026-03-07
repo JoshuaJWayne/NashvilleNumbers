@@ -3,14 +3,14 @@ frontend:
   phases:
     build:
       commands:
-        - echo "Deploying Nashville Numbers and Pitch files"
+        - echo "Deploying Nashville Numbers with Pitch subfolder"
   artifacts:
     baseDirectory: /
     files:
       - "index.html"
       - "style.css"
       - "app.js"
-      - "pitch.html"
-      - "pitch.js"
+      - "pitch/index.html"
+      - "pitch/pitch.js"
   cache:
     paths: []
