@@ -1,0 +1,14 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - echo "Deploying Nashville Numbers"
+  artifacts:
+    baseDirectory: /
+    files:
+      - "index.html"
+      - "style.css"
+      - "app.js"
+  cache:
+    paths: []
