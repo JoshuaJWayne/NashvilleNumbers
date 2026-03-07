@@ -253,53 +253,18 @@ function clearProgression() {
   renderOutput();
 }
 
-// ─── Drag & Drop ──────────────────────────────────────────────────────────────
-
-function onDragStart(e, index) {
-  dragSrcIndex = index;
-  e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => e.target.classList.add('dragging'), 0);
-}
-
-function onDragEnd(e) {
-  e.target.classList.remove('dragging');
-  document.querySelectorAll('.prog-slot').forEach(s => s.classList.remove('drag-over'));
-}
-
-function onDragOver(e, index) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  document.querySelectorAll('.prog-slot').forEach(s => s.classList.remove('drag-over'));
-  if (index !== dragSrcIndex) {
-    document.querySelectorAll('.prog-slot')[index]?.classList.add('drag-over');
-  }
-}
-
-function onDrop(e, index) {
-  e.preventDefault();
-  if (dragSrcIndex === null || dragSrcIndex === index) return;
-  const moved = progression.splice(dragSrcIndex, 1)[0];
-  progression.splice(index, 0, moved);
-  dragSrcIndex = null;
-  renderProgression();
-  renderOutput();
-}
-
 // ─── Render Progression Slots ─────────────────────────────────────────────────
 
 function renderProgression() {
   const wrap = document.getElementById('progressionSlots');
-  const hint = document.getElementById('emptyHint');
   wrap.innerHTML = '';
 
   if (!progression.length) {
-    wrap.appendChild(hint || (() => {
-      const h = document.createElement('div');
-      h.className = 'prog-empty-hint';
-      h.id = 'emptyHint';
-      h.textContent = 'No chords yet — click chords above to add them';
-      return h;
-    })());
+    const h = document.createElement('div');
+    h.className   = 'prog-empty-hint';
+    h.id          = 'emptyHint';
+    h.textContent = 'No chords yet — click chords above to add them';
+    wrap.appendChild(h);
     document.getElementById('playProgressionBtn').disabled = true;
     return;
   }
@@ -308,24 +273,83 @@ function renderProgression() {
 
   progression.forEach((item, i) => {
     const slot = document.createElement('div');
-    slot.className   = 'prog-slot';
-    slot.draggable   = true;
-    slot.ondragstart = e => onDragStart(e, i);
-    slot.ondragend   = onDragEnd;
-    slot.ondragover  = e => onDragOver(e, i);
-    slot.ondrop      = e => onDrop(e, i);
+    slot.className = 'prog-slot';
+    slot.draggable = true;
 
-    const numLabel = item.isChromatic
+    // ── Drag events on the slot itself ──
+    slot.addEventListener('dragstart', e => {
+      dragSrcIndex = i;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(i)); // required for Firefox
+      setTimeout(() => slot.classList.add('dragging'), 0);
+    });
+
+    slot.addEventListener('dragend', () => {
+      slot.classList.remove('dragging');
+      document.querySelectorAll('.prog-slot').forEach(s => s.classList.remove('drag-over'));
+    });
+
+    slot.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.prog-slot').forEach(s => s.classList.remove('drag-over'));
+      if (i !== dragSrcIndex) slot.classList.add('drag-over');
+    });
+
+    slot.addEventListener('dragleave', () => {
+      slot.classList.remove('drag-over');
+    });
+
+    slot.addEventListener('drop', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      slot.classList.remove('drag-over');
+      if (dragSrcIndex === null || dragSrcIndex === i) return;
+      const moved = progression.splice(dragSrcIndex, 1)[0];
+      progression.splice(i, 0, moved);
+      dragSrcIndex = null;
+      renderProgression();
+      renderOutput();
+    });
+
+    // ── Remove button ──
+    const removeBtn = document.createElement('button');
+    removeBtn.className   = 'slot-remove';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      progression.splice(i, 1);
+      renderProgression();
+      renderOutput();
+    });
+
+    // ── Number label ──
+    const numLabel = document.createElement('span');
+    numLabel.className   = 'slot-number';
+    numLabel.textContent = item.isChromatic
       ? (item.chromaticLabel || '?')
       : NUMERAL_ROMAN[item.degreeIndex];
 
-    slot.innerHTML = `
-      <button class="slot-remove" onclick="removeChord(${item.id})">✕</button>
-      <span class="slot-number">${numLabel}</span>
-      <span class="slot-chord">${item.chordName}</span>
-      <button class="slot-play-btn" onclick="playSingleChord('${item.chordName}', ${item.isChromatic ? 4 : octaveForDegree(sourceKey, item.degreeIndex)}, this)">♪</button>
-    `;
+    // ── Chord name ──
+    const chordLabel = document.createElement('span');
+    chordLabel.className   = 'slot-chord';
+    chordLabel.textContent = item.chordName;
 
+    // ── Play button ──
+    const playBtn = document.createElement('button');
+    playBtn.className   = 'slot-play-btn';
+    playBtn.textContent = '♪';
+    playBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const octave = item.isChromatic ? 4 : octaveForDegree(sourceKey, item.degreeIndex);
+      playSingleChord(item.chordName, octave, playBtn);
+    });
+
+    slot.appendChild(removeBtn);
+    slot.appendChild(numLabel);
+    slot.appendChild(chordLabel);
+    slot.appendChild(playBtn);
     wrap.appendChild(slot);
   });
 }

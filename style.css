@@ -36,6 +36,24 @@ body::before {
   opacity: 0.4;
 }
 
+/* ─── Back Link ──────────────────────────────────────────────────────────── */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 20px;
+  transition: color 0.15s;
+}
+
+.back-link:hover { color: var(--accent); }
+
 /* ─── Header ─────────────────────────────────────────────────────────────── */
 
 header {
