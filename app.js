@@ -337,12 +337,14 @@ function showHint() {
 
 function normalizeAnswer(str) {
   return str.toLowerCase()
-    .replace(/\s*[–\-,/]+\s*/g, '|')
-    .replace(/\s+/g, '')
     .replace(/maj/g, '')
     .replace(/major/g, '')
     .replace(/minor/g, 'm')
-    .trim();
+    .trim()
+    .replace(/\s*[–\-,/]+\s*/g, '|')  // dashes, commas, slashes → |
+    .replace(/\s+/g, '|')              // remaining spaces → |
+    .replace(/\|+/g, '|')              // collapse any double separators
+    .replace(/^\||\|$/g, '');          // trim leading/trailing |
 }
 
 function checkType() {
@@ -394,6 +396,85 @@ function updateScore() {
   document.getElementById('accuracyVal').textContent = acc;
 }
 
+// ─── Audio Engine ─────────────────────────────────────────────────────────────
+
+// Map every note name to a Tone.js pitch (octave 4, with enharmonic equivalents)
+const NOTE_TO_PITCH = {
+  'C': 'C4', 'C#': 'C#4', 'Db': 'Db4',
+  'D': 'D4', 'D#': 'D#4', 'Eb': 'Eb4',
+  'E': 'E4',
+  'F': 'F4', 'F#': 'F#4', 'Gb': 'Gb4',
+  'G': 'G4', 'G#': 'G#4', 'Ab': 'Ab4',
+  'A': 'A4', 'A#': 'A#4', 'Bb': 'Bb4',
+  'B': 'B4', 'Cb': 'B3',
+};
+
+// Build the notes for a chord given its name (e.g. "Em", "F#", "B°")
+function chordToNotes(chordName) {
+  // Parse root and quality
+  let root, quality;
+  if (chordName.endsWith('°')) {
+    root    = chordName.slice(0, -1);
+    quality = 'dim';
+  } else if (chordName.endsWith('m')) {
+    root    = chordName.slice(0, -1);
+    quality = 'min';
+  } else {
+    root    = chordName;
+    quality = 'maj';
+  }
+
+  // Chromatic scale for interval math
+  const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const ENHARMONIC = { 'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B' };
+
+  const normalRoot = ENHARMONIC[root] || root;
+  const rootIdx    = CHROMATIC.indexOf(normalRoot);
+  if (rootIdx === -1) return [];
+
+  // Intervals: maj = 0,4,7  min = 0,3,7  dim = 0,3,6
+  const intervals = quality === 'maj' ? [0,4,7]
+                  : quality === 'min' ? [0,3,7]
+                  :                     [0,3,6];
+
+  return intervals.map(interval => {
+    const noteIdx  = (rootIdx + interval) % 12;
+    const noteName = CHROMATIC[noteIdx];
+    // Root stays in octave 4; upper notes bump to 5 if they wrap around
+    const octave   = (rootIdx + interval >= 12) ? 5 : 4;
+    return noteName + octave;
+  });
+}
+
+// Lazily created synth — only created after first user gesture
+let synth = null;
+
+function getSynth() {
+  if (!synth) {
+    synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope:   { attack: 0.02, decay: 0.3, sustain: 0.4, release: 1.2 },
+      volume:     -6,
+    }).toDestination();
+  }
+  return synth;
+}
+
+async function playChord(chordName, btn) {
+  await Tone.start();
+  const notes = chordToNotes(chordName);
+  if (!notes.length) return;
+
+  // Visual feedback on the button
+  if (btn) {
+    btn.classList.add('playing');
+    setTimeout(() => btn.classList.remove('playing'), 1200);
+  }
+
+  const s = getSynth();
+  s.triggerAttackRelease(notes, '2n');
+}
+
 // ─── Reference Chart ──────────────────────────────────────────────────────────
 
 function buildRefChart() {
@@ -406,7 +487,11 @@ function buildRefChart() {
   keys.forEach(k => {
     html += `<tr><td class="row-key">${k}</td>`;
     for (let d = 0; d < 7; d++) {
-      html += `<td>${getChordName(k, d)}</td>`;
+      const chord = getChordName(k, d);
+      html += `<td>
+        <span class="ref-chord-name">${chord}</span>
+        <button class="ref-play-btn" onclick="playChord('${chord}', this)" title="Play ${chord}">♪</button>
+      </td>`;
     }
     html += '</tr>';
   });

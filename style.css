@@ -545,6 +545,40 @@ header {
   font-weight: 600;
 }
 
+/* Chord cell layout */
+.ref-table td {
+  white-space: nowrap;
+}
+
+.ref-chord-name {
+  margin-right: 4px;
+}
+
+.ref-play-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 1px 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+.ref-play-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+}
+
+.ref-play-btn.playing {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
+
 /* ─── Progress Bar ───────────────────────────────────────────────────────── */
 
 .progress-wrap {
