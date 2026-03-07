@@ -486,6 +486,131 @@ async function playChord(chordName, btn, baseOctave = 4) {
   piano.triggerAttackRelease(notes, '2n');
 }
 
+// ─── Piano Keyboard Renderer ──────────────────────────────────────────────────
+
+// Returns the set of chromatic note names (without octave) that are in the chord
+function chordNoteNames(chordName) {
+  let root, quality;
+  if (chordName.endsWith('°')) {
+    root = chordName.slice(0, -1); quality = 'dim';
+  } else if (chordName.endsWith('m')) {
+    root = chordName.slice(0, -1); quality = 'min';
+  } else {
+    root = chordName; quality = 'maj';
+  }
+  const rootIdx  = noteToIndex(root);
+  if (rootIdx === -1) return new Set();
+  const intervals = quality === 'maj' ? [0,4,7] : quality === 'min' ? [0,3,7] : [0,3,6];
+  return new Set(intervals.map(i => CHROMATIC[(rootIdx + i) % 12]));
+}
+
+// Draws a 2-octave SVG piano keyboard with chord tones highlighted in gold.
+// Starts from C4 through B5.
+function buildPianoSVG(chordName) {
+  const highlighted = chordNoteNames(chordName);
+
+  // White key note names in order across 2 octaves (C4–B5)
+  const WHITE_NOTES = ['C','D','E','F','G','A','B', 'C','D','E','F','G','A','B'];
+  // Black key positions: index of the white key to the LEFT, and note name
+  // Pattern per octave: C#, D#, (gap), F#, G#, A#, (gap)
+  const BLACK_PATTERN = [
+    {pos:0, note:'C#'},{pos:1, note:'D#'},
+    {pos:3, note:'F#'},{pos:4, note:'G#'},{pos:5, note:'A#'},
+  ];
+  const BLACK_KEYS = [
+    ...BLACK_PATTERN.map(b => ({pos: b.pos,   note: b.note})),
+    ...BLACK_PATTERN.map(b => ({pos: b.pos+7, note: b.note})),
+  ];
+
+  const W  = 28;   // white key width
+  const WH = 90;   // white key height
+  const BW = 18;   // black key width
+  const BH = 56;   // black key height
+  const totalW = WHITE_NOTES.length * W;
+
+  let svg = `<svg class="piano-svg" viewBox="0 0 ${totalW} ${WH}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // White keys
+  WHITE_NOTES.forEach((note, i) => {
+    const isLit = highlighted.has(note);
+    const fill  = isLit ? '#f5c842' : '#f0ede6';
+    const stroke = '#555';
+    svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}"
+      fill="${fill}" stroke="${stroke}" stroke-width="1" rx="2"/>`;
+    if (isLit) {
+      svg += `<text x="${i*W + W/2}" y="${WH - 8}" text-anchor="middle"
+        font-size="8" font-family="IBM Plex Mono, monospace"
+        font-weight="600" fill="#000">${note}</text>`;
+    }
+  });
+
+  // Black keys (drawn on top)
+  BLACK_KEYS.forEach(({pos, note}) => {
+    const isLit = highlighted.has(note);
+    const fill  = isLit ? '#f5c842' : '#1a1a1a';
+    const x     = pos * W + W - BW / 2;
+    svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}"
+      fill="${fill}" stroke="#000" stroke-width="1" rx="2"/>`;
+    if (isLit) {
+      svg += `<text x="${x + BW/2}" y="${BH - 5}" text-anchor="middle"
+        font-size="7" font-family="IBM Plex Mono, monospace"
+        font-weight="600" fill="#000">${note}</text>`;
+    }
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+// Track which chord panel is currently open (key_degree string)
+let openChordPanel = null;
+
+function toggleChordPanel(key, degree, chordName, btnEl) {
+  const panelId = `cp-${key}-${degree}`;
+  const rowId   = `cr-${key}-${degree}`;
+
+  // If this panel is already open, close it
+  if (openChordPanel === panelId) {
+    document.getElementById(rowId).remove();
+    openChordPanel = null;
+    btnEl.classList.remove('active');
+    return;
+  }
+
+  // Close any other open panel first
+  if (openChordPanel) {
+    const old = document.getElementById(openChordPanel.replace('cp-','cr-'));
+    if (old) old.remove();
+    document.querySelectorAll('.ref-piano-btn.active').forEach(b => b.classList.remove('active'));
+  }
+
+  openChordPanel = panelId;
+  btnEl.classList.add('active');
+
+  // Find the table row this button lives in and insert a new row after it
+  const parentRow = btnEl.closest('tr');
+  const colSpan   = 8; // Key col + 7 degree cols
+
+  const newRow = document.createElement('tr');
+  newRow.id = rowId;
+  newRow.className = 'chord-panel-row';
+  newRow.innerHTML = `
+    <td colspan="${colSpan}">
+      <div class="chord-panel" id="${panelId}">
+        <div class="chord-panel-header">
+          <span class="chord-panel-title">${chordName}</span>
+          <span class="chord-panel-notes">${[...chordNoteNames(chordName)].join(' · ')}</span>
+          <button class="chord-panel-close" onclick="toggleChordPanel('${key}',${degree},'${chordName}',document.querySelector('[data-panel=\\'${key}-${degree}\\']'))">✕</button>
+        </div>
+        <div class="chord-panel-keyboard">
+          ${buildPianoSVG(chordName)}
+        </div>
+      </div>
+    </td>`;
+
+  parentRow.insertAdjacentElement('afterend', newRow);
+}
+
 // ─── Reference Chart ──────────────────────────────────────────────────────────
 
 function buildRefChart() {
@@ -497,19 +622,25 @@ function buildRefChart() {
   html += '</tr></thead><tbody>';
 
   keys.forEach(k => {
-    html += `<tr><td class="row-key">${k}</td>`;
+    html += `<tr>`;
+    html += `<td class="row-key">${k}</td>`;
     for (let d = 0; d < 7; d++) {
       const chord  = getChordName(k, d);
       const octave = octaveForDegree(k, d);
-      // Pass the octave as a data attribute so the inline onclick can use it
       html += `<td>
         <span class="ref-chord-name">${chord}</span>
-        <button class="ref-play-btn"
-          onclick="playChord('${chord}', this, ${octave})"
-          title="Play ${chord}">♪</button>
+        <div class="ref-btn-group">
+          <button class="ref-play-btn"
+            onclick="playChord('${chord}', this, ${octave})"
+            title="Play ${chord}">♪</button>
+          <button class="ref-piano-btn"
+            data-panel="${k}-${d}"
+            onclick="toggleChordPanel('${k}', ${d}, '${chord}', this)"
+            title="Show chord on keyboard">🎹</button>
+        </div>
       </td>`;
     }
-    html += '</tr>';
+    html += `</tr>`;
   });
 
   html += '</tbody></table>';
