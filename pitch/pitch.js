@@ -566,9 +566,9 @@ function buildPitchPianoSVG(highlightNote) {
     svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}"
       fill="${lit ? '#f5c842' : '#f0ede6'}" stroke="#555" stroke-width="1" rx="2"
       style="cursor:pointer" onclick="pitchPianoPlayNote('${note}',${oct})" ${hover}/>`;
-    if (lit) svg += `<text x="${i*W+W/2}" y="${WH-8}" text-anchor="middle"
-      font-size="8" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000"
-      style="pointer-events:none">${note}</text>`;
+    svg += `<text x="${i*W+W/2}" y="${WH-8}" text-anchor="middle"
+      font-size="8" font-family="IBM Plex Mono,monospace" font-weight="600"
+      fill="${lit ? '#000' : '#888'}" style="pointer-events:none">${note}</text>`;
   });
 
   // Black keys
@@ -579,9 +579,9 @@ function buildPitchPianoSVG(highlightNote) {
     svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}"
       fill="${lit ? '#f5c842' : '#1a1a1a'}" stroke="#000" stroke-width="1" rx="2"
       style="cursor:pointer" onclick="pitchPianoPlayNote('${note}',${oct})" ${hover}/>`;
-    if (lit) svg += `<text x="${x+BW/2}" y="${BH-5}" text-anchor="middle"
-      font-size="7" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000"
-      style="pointer-events:none">${note}</text>`;
+    svg += `<text x="${x+BW/2}" y="${BH-4}" text-anchor="middle"
+      font-size="6" font-family="IBM Plex Mono,monospace" font-weight="600"
+      fill="${lit ? '#000' : '#888'}" style="pointer-events:none">${note.replace('#','♯')}</text>`;
   });
 
   svg += '</svg>';
