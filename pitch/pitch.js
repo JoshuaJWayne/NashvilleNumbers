@@ -4,28 +4,33 @@ const NATURAL_NOTES = ['C','D','E','F','G','A','B'];
 const SHARP_NOTES   = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const ALL_NOTES     = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
-// Display names — sharps shown as e.g. "C# / Db"
 const NOTE_DISPLAY = {
   'C':'C', 'C#':'C# / Db', 'D':'D', 'D#':'D# / Eb',
   'E':'E', 'F':'F', 'F#':'F# / Gb', 'G':'G',
   'G#':'G# / Ab', 'A':'A', 'A#':'A# / Bb', 'B':'B',
 };
 
-// Which notes are "black keys"
 const BLACK_KEY_NOTES = new Set(['C#','D#','F#','G#','A#']);
+const MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
+
+// Reference note counts per difficulty in sequence mode
+const SEQ_REF_COUNT = { natural: 5, sharps: 3, all: 1 };
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
-let ptScore    = 0;
-let ptTotal    = 0;
-let ptStreak   = 0;
-let ptQNum     = 0;
+let ptScore    = 0, ptTotal = 0, ptStreak = 0, ptQNum = 0;
 let ptAnswered = false;
-let currentNote     = null;   // e.g. 'C#'
-let currentOctave   = 4;
-let currentDiff     = 'natural';
-let currentAnsMode  = 'multiple';
-let pitchSynth      = null;
+let currentNote      = null;
+let currentOctave    = 4;
+let currentDiff      = 'natural';
+let currentAnsMode   = 'multiple';
+let currentTrainMode = 'single';
+let pitchSynth       = null;
+
+// Sequence mode state
+let seqRootNote  = 'C';
+let seqRefNotes  = [];
+let seqIsPlaying = false;
 
 // ─── Synth ────────────────────────────────────────────────────────────────────
 
@@ -33,12 +38,7 @@ function getPitchSynth() {
   if (!pitchSynth) {
     pitchSynth = new Tone.Synth({
       oscillator: { type: 'sine' },
-      envelope: {
-        attack:  0.005,
-        decay:   1.4,
-        sustain: 0.0,
-        release: 1.8,
-      },
+      envelope: { attack: 0.005, decay: 1.4, sustain: 0.0, release: 1.8 },
       volume: -4,
     }).toDestination();
   }
@@ -47,8 +47,51 @@ function getPitchSynth() {
 
 async function playNote(note, octave) {
   await Tone.start();
+  getPitchSynth().triggerAttackRelease(note + octave, '2n');
+}
+
+async function playSequenceNotes(notes, gap = 0.9) {
+  await Tone.start();
+  seqIsPlaying = true;
+  setReplaySeqBtn(true);
+
   const synth = getPitchSynth();
-  synth.triggerAttackRelease(note + octave, '2n');
+  const now   = Tone.now();
+
+  notes.forEach(({ note, octave }, i) => {
+    synth.triggerAttackRelease(note + octave, '4n', now + i * gap);
+    setTimeout(() => highlightSeqBubble(i), i * gap * 1000);
+  });
+
+  const totalMs = (notes.length - 1) * gap * 1000 + 900;
+  return new Promise(resolve => {
+    setTimeout(() => {
+      seqIsPlaying = false;
+      setReplaySeqBtn(false);
+      document.querySelectorAll('.seq-note-bubble:not(.mystery-played)').forEach(b => b.classList.remove('playing'));
+      resolve();
+    }, totalMs);
+  });
+}
+
+function highlightSeqBubble(index) {
+  document.querySelectorAll('.seq-note-bubble').forEach(b => b.classList.remove('playing'));
+  const bubbles = document.querySelectorAll('.seq-note-bubble');
+  if (bubbles[index]) bubbles[index].classList.add('playing');
+}
+
+function setReplaySeqBtn(disabled) {
+  const btn = document.getElementById('replaySeqBtn');
+  if (btn) btn.disabled = disabled;
+}
+
+// ─── Training Mode ────────────────────────────────────────────────────────────
+
+function setTrainMode(mode) {
+  currentTrainMode = mode;
+  document.getElementById('tmtSingle').classList.toggle('active', mode === 'single');
+  document.getElementById('tmtSequence').classList.toggle('active', mode === 'sequence');
+  newPitchQuestion();
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
@@ -81,83 +124,194 @@ function getOctavePool() {
   return [4];
 }
 
+// ─── Scale & Sequence Helpers ─────────────────────────────────────────────────
+
+const CHROMATIC  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const ENHARMONIC = { 'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B' };
+
+function noteToIdx(note) {
+  return CHROMATIC.indexOf(ENHARMONIC[note] || note);
+}
+
+function buildScaleRefs(rootNote, rootOctave, refCount) {
+  const rootIdx = noteToIdx(rootNote);
+  return MAJOR_SCALE_INTERVALS.slice(0, refCount).map(semitones => {
+    const noteIdx = (rootIdx + semitones) % 12;
+    const octave  = rootOctave + Math.floor((rootIdx + semitones) / 12);
+    return { note: CHROMATIC[noteIdx], octave, label: CHROMATIC[noteIdx] };
+  });
+}
+
+function pickMysteryInScale(rootNote, rootOctave, refCount, notePool) {
+  const rootIdx    = noteToIdx(rootNote);
+  const scaleNotes = MAJOR_SCALE_INTERVALS.map(s => CHROMATIC[(rootIdx + s) % 12]);
+  const poolNorm   = notePool.map(n => ENHARMONIC[n] || n);
+  const inScale    = poolNorm.filter(n => scaleNotes.includes(n));
+  const candidates = (inScale.length > 0 ? inScale : poolNorm);
+
+  // Avoid repeating the last reference note
+  const lastRef = refCount > 0
+    ? CHROMATIC[(rootIdx + MAJOR_SCALE_INTERVALS[refCount - 1]) % 12]
+    : null;
+  const filtered = candidates.filter(n => n !== lastRef);
+  const pool     = filtered.length > 0 ? filtered : candidates;
+
+  const note   = pool[Math.floor(Math.random() * pool.length)];
+  const nIdx   = noteToIdx(note);
+  const octave = nIdx < noteToIdx(rootNote) ? rootOctave + 1 : rootOctave;
+  return { note, octave };
+}
+
 // ─── Question Generation ──────────────────────────────────────────────────────
 
 function newPitchQuestion() {
+  if (seqIsPlaying) return;
   ptAnswered = false;
   ptQNum++;
 
-  const pool   = getNotePool();
+  const pool   = getNotePool().map(n => ENHARMONIC[n] || n);
   const octaves = getOctavePool();
 
   currentNote   = pool[Math.floor(Math.random() * pool.length)];
   currentOctave = octaves[Math.floor(Math.random() * octaves.length)];
 
-  // Update meta
-  document.getElementById('ptQCount').textContent = `Q ${ptQNum}`;
-  document.getElementById('ptQType').textContent  = 'IDENTIFY THE NOTE';
-
-  // Clear feedback & result piano
-  document.getElementById('ptFeedback').className    = 'feedback';
-  document.getElementById('ptNextBtn').className     = 'next-btn';
-  document.getElementById('ptCard').className        = 'quiz-card';
+  // Reset UI
+  document.getElementById('ptQCount').textContent      = `Q ${ptQNum}`;
+  document.getElementById('ptFeedback').className      = 'feedback';
+  document.getElementById('ptNextBtn').className       = 'next-btn';
+  document.getElementById('ptCard').className          = 'quiz-card';
   document.getElementById('resultPianoWrap').className = 'result-piano-wrap';
   document.getElementById('resultPianoSVG').innerHTML  = '';
 
-  // Update progress bar
   const pct = Math.min((ptScore / Math.max(ptTotal, 1)) * 100, 100);
   document.getElementById('ptProgressBar').style.width = pct + '%';
 
-  // Reset play button
-  const playBtn = document.getElementById('playNoteBtn');
-  playBtn.classList.remove('playing');
-  document.getElementById('playBtnLabel').textContent = 'Play Note';
-
-  // Build answer area
   const area = document.getElementById('ptAnswerArea');
   area.innerHTML = '';
 
-  if (currentAnsMode === 'multiple') {
-    buildPitchMultipleChoice(area);
+  if (currentTrainMode === 'single') {
+    document.getElementById('ptQType').textContent      = 'IDENTIFY THE NOTE';
+    document.getElementById('playNoteBtn').style.display = '';
+    document.getElementById('seqDisplayWrap').style.display = 'none';
+
+    const playBtn = document.getElementById('playNoteBtn');
+    playBtn.classList.remove('playing');
+    document.getElementById('playBtnLabel').textContent = 'Play Note';
+
+    if (currentAnsMode === 'multiple') buildPitchMultipleChoice(area);
+    else buildPitchTypeInput(area);
+
   } else {
-    buildPitchTypeInput(area);
+    document.getElementById('ptQType').textContent      = 'NOTE IN CONTEXT';
+    document.getElementById('playNoteBtn').style.display = 'none';
+    document.getElementById('seqDisplayWrap').style.display = 'block';
+
+    const refCount   = SEQ_REF_COUNT[currentDiff] ?? 3;
+    const baseOctave = octaves[0] || 4;
+
+    seqRootNote = NATURAL_NOTES[Math.floor(Math.random() * NATURAL_NOTES.length)];
+    seqRefNotes = buildScaleRefs(seqRootNote, baseOctave, refCount);
+
+    const mystery  = pickMysteryInScale(seqRootNote, baseOctave, refCount, pool);
+    currentNote    = mystery.note;
+    currentOctave  = mystery.octave;
+
+    document.getElementById('refsCountBadge').innerHTML =
+      `<span>${refCount}</span> reference note${refCount !== 1 ? 's' : ''} from <span>${seqRootNote} major</span> · then guess the mystery note`;
+
+    renderSeqDisplay(refCount);
+
+    if (currentAnsMode === 'multiple') buildPitchMultipleChoice(area);
+    else buildPitchTypeInput(area);
   }
 
-  // Auto-play the note after a short delay
-  setTimeout(() => replayNote(), 400);
-
-  // Pop animation
   document.getElementById('ptCard').classList.add('pop');
   setTimeout(() => document.getElementById('ptCard').classList.remove('pop'), 300);
 }
 
-// ─── Play / Replay ────────────────────────────────────────────────────────────
+// ─── Sequence Display ─────────────────────────────────────────────────────────
+
+function renderSeqDisplay(refCount) {
+  const display = document.getElementById('seqDisplay');
+  display.innerHTML = '';
+
+  seqRefNotes.forEach((ref, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('span');
+      arrow.className   = 'seq-arrow';
+      arrow.textContent = '›';
+      display.appendChild(arrow);
+    }
+    const wrap   = document.createElement('div');
+    wrap.className = 'seq-note';
+
+    const bubble = document.createElement('div');
+    bubble.className   = 'seq-note-bubble';
+    bubble.id          = `seq-bubble-${i}`;
+    bubble.textContent = ref.label;
+
+    const lbl = document.createElement('div');
+    lbl.className   = 'seq-note-label';
+    lbl.textContent = `note ${i + 1}`;
+
+    wrap.appendChild(bubble);
+    wrap.appendChild(lbl);
+    display.appendChild(wrap);
+  });
+
+  // Arrow + mystery note
+  const arrow = document.createElement('span');
+  arrow.className   = 'seq-arrow';
+  arrow.textContent = '›';
+  display.appendChild(arrow);
+
+  const mystWrap   = document.createElement('div');
+  mystWrap.className = 'seq-note';
+
+  const mystBubble = document.createElement('div');
+  mystBubble.className   = 'seq-note-bubble mystery';
+  mystBubble.id          = `seq-bubble-${refCount}`;
+  mystBubble.textContent = '?';
+
+  const mystLbl = document.createElement('div');
+  mystLbl.className   = 'seq-note-label';
+  mystLbl.style.color = 'var(--accent)';
+  mystLbl.textContent = 'guess this';
+
+  mystWrap.appendChild(mystBubble);
+  mystWrap.appendChild(mystLbl);
+  display.appendChild(mystWrap);
+}
+
+// ─── Replay ───────────────────────────────────────────────────────────────────
 
 async function replayNote() {
   const playBtn = document.getElementById('playNoteBtn');
   playBtn.classList.add('playing');
   document.getElementById('playBtnLabel').textContent = 'Playing…';
-
   await playNote(currentNote, currentOctave);
-
   setTimeout(() => {
     playBtn.classList.remove('playing');
     document.getElementById('playBtnLabel').textContent = 'Replay Note';
   }, 1600);
 }
 
+async function replaySequence() {
+  if (seqIsPlaying) return;
+  const fullSeq = [
+    ...seqRefNotes.map(r => ({ note: r.note, octave: r.octave })),
+    { note: currentNote, octave: currentOctave },
+  ];
+  await playSequenceNotes(fullSeq, 0.9);
+}
+
 // ─── Multiple Choice ──────────────────────────────────────────────────────────
 
 function buildPitchMultipleChoice(area) {
-  const pool    = getNotePool();
-  const wrong   = generateWrongNotes(currentNote, pool, 5);
-  const options = shuffle([currentNote, ...wrong]).slice(0, 6);
-
-  // Always include the correct answer
-  if (!options.includes(currentNote)) {
-    options[0] = currentNote;
-    shuffle(options);
-  }
+  const pool  = getNotePool().map(n => ENHARMONIC[n] || n);
+  const wrong = shuffle(pool.filter(n => n !== currentNote)).slice(0, 5);
+  let options = shuffle([currentNote, ...wrong]).slice(0, 6);
+  if (!options.includes(currentNote)) { options[0] = currentNote; options = shuffle(options); }
 
   const grid = document.createElement('div');
   grid.className = 'pitch-choices';
@@ -171,11 +325,6 @@ function buildPitchMultipleChoice(area) {
   });
 
   area.appendChild(grid);
-}
-
-function generateWrongNotes(correct, pool, count) {
-  const others = pool.filter(n => n !== correct);
-  return shuffle(others).slice(0, count);
 }
 
 // ─── Type Input ───────────────────────────────────────────────────────────────
@@ -201,16 +350,13 @@ function buildPitchTypeInput(area) {
   row.appendChild(btn);
   area.appendChild(row);
 
-  // Symbol helper for sharps/flats
   if (currentDiff !== 'natural') {
     const toolbar = document.createElement('div');
     toolbar.className = 'symbol-toolbar';
-
     const lbl = document.createElement('span');
-    lbl.className   = 'symbol-toolbar-label';
+    lbl.className = 'symbol-toolbar-label';
     lbl.textContent = 'Insert:';
     toolbar.appendChild(lbl);
-
     [{ char:'#', label:'Sharp' }, { char:'b', label:'Flat (♭)' }].forEach(({ char, label }) => {
       const s = document.createElement('button');
       s.className = 'sym-btn';
@@ -224,7 +370,6 @@ function buildPitchTypeInput(area) {
       };
       toolbar.appendChild(s);
     });
-
     area.appendChild(toolbar);
   }
 
@@ -241,30 +386,22 @@ function checkPitchAnswer(chosen, btn, grid) {
   const isCorrect = chosen === currentNote;
 
   if (isCorrect) {
-    ptScore++;
-    ptStreak++;
+    ptScore++; ptStreak++;
     btn.classList.add('correct');
     document.getElementById('ptCard').className = 'quiz-card correct';
-    showPitchFeedback(true);
   } else {
     ptStreak = 0;
     btn.classList.add('wrong');
     document.getElementById('ptCard').className = 'quiz-card wrong';
     document.getElementById('ptCard').classList.add('shake');
     setTimeout(() => document.getElementById('ptCard').classList.remove('shake'), 400);
-    // Highlight the correct answer
     grid.querySelectorAll('.pitch-choice-btn').forEach(b => {
-      if ((NOTE_DISPLAY[currentNote] || currentNote) === b.textContent.trim()) {
-        b.classList.add('correct');
-      }
+      if ((NOTE_DISPLAY[currentNote] || currentNote) === b.textContent.trim()) b.classList.add('correct');
     });
-    showPitchFeedback(false);
   }
 
   grid.querySelectorAll('.pitch-choice-btn').forEach(b => b.disabled = true);
-  updatePitchScore();
-  showResultPiano();
-  document.getElementById('ptNextBtn').className = 'next-btn show';
+  finishQuestion(isCorrect);
 }
 
 function checkPitchType() {
@@ -277,119 +414,97 @@ function checkPitchType() {
   ptTotal++;
 
   const isCorrect = normalizePitchAnswer(val) === normalizePitchAnswer(currentNote);
-
   inp.classList.add(isCorrect ? 'correct' : 'wrong');
   inp.disabled = true;
 
   if (isCorrect) {
-    ptScore++;
-    ptStreak++;
+    ptScore++; ptStreak++;
     document.getElementById('ptCard').className = 'quiz-card correct';
-    showPitchFeedback(true);
   } else {
     ptStreak = 0;
     document.getElementById('ptCard').className = 'quiz-card wrong';
     document.getElementById('ptCard').classList.add('shake');
     setTimeout(() => document.getElementById('ptCard').classList.remove('shake'), 400);
-    showPitchFeedback(false);
   }
 
+  finishQuestion(isCorrect);
+}
+
+function finishQuestion(isCorrect) {
+  showPitchFeedback(isCorrect);
   updatePitchScore();
   showResultPiano();
+  if (currentTrainMode === 'sequence') revealMysteryBubble();
   document.getElementById('ptNextBtn').className = 'next-btn show';
 }
 
-// Normalize: uppercase, treat 'b' suffix as flat → map to sharp equivalent
+function revealMysteryBubble() {
+  const bubble = document.getElementById(`seq-bubble-${seqRefNotes.length}`);
+  if (!bubble) return;
+  bubble.textContent = NOTE_DISPLAY[currentNote] || currentNote;
+  bubble.classList.remove('mystery');
+  bubble.classList.add('mystery-played');
+  Object.assign(bubble.style, {
+    background: 'var(--accent)', borderColor: 'var(--accent)',
+    color: '#000', borderStyle: 'solid',
+  });
+}
+
+// ─── Feedback / Score / Piano ─────────────────────────────────────────────────
+
 function normalizePitchAnswer(str) {
-  const FLAT_TO_SHARP = {
-    'db':'C#','eb':'D#','fb':'E','gb':'F#','ab':'G#','bb':'A#','cb':'B'
-  };
-  const cleaned = str.trim().toLowerCase().replace(/\s/g, '');
-  if (FLAT_TO_SHARP[cleaned]) return FLAT_TO_SHARP[cleaned].toLowerCase();
-  return cleaned;
+  const F2S = { 'db':'C#','eb':'D#','fb':'E','gb':'F#','ab':'G#','bb':'A#','cb':'B' };
+  const c = str.trim().toLowerCase().replace(/\s/g, '');
+  return F2S[c] ? F2S[c] : c;
 }
 
 function showPitchFeedback(correct) {
   const fb = document.getElementById('ptFeedback');
   fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
-  const displayName = NOTE_DISPLAY[currentNote] || currentNote;
+  const display = NOTE_DISPLAY[currentNote] || currentNote;
   document.getElementById('ptFeedbackAnswer').textContent =
-    correct
-      ? `✓ Correct! The note was ${displayName}`
-      : `✗ The note was ${displayName}`;
-  document.getElementById('ptFeedbackExpl').textContent =
-    `Octave ${currentOctave}  ·  ${BLACK_KEY_NOTES.has(currentNote) ? 'Black key' : 'White key'}`;
+    correct ? `✓ Correct! The note was ${display}` : `✗ The note was ${display}`;
+  let expl = `Octave ${currentOctave}  ·  ${BLACK_KEY_NOTES.has(currentNote) ? 'Black key' : 'White key'}`;
+  if (currentTrainMode === 'sequence') expl += `  ·  ${seqRootNote} major scale`;
+  document.getElementById('ptFeedbackExpl').textContent = expl;
 }
-
-// ─── Result Piano ─────────────────────────────────────────────────────────────
 
 function showResultPiano() {
-  const wrap = document.getElementById('resultPianoWrap');
-  wrap.className = 'result-piano-wrap show';
-  document.getElementById('resultPianoSVG').innerHTML = buildPitchPianoSVG(currentNote);
+  document.getElementById('resultPianoWrap').className = 'result-piano-wrap show';
+  document.getElementById('resultPianoSVG').innerHTML  = buildPitchPianoSVG(currentNote);
 }
-
-// 2-octave piano SVG highlighting a single note name across both octaves
-function buildPitchPianoSVG(highlightNote) {
-  const CHROMATIC   = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  const WHITE_NOTES = ['C','D','E','F','G','A','B','C','D','E','F','G','A','B'];
-  const BLACK_KEYS  = [
-    {pos:0,note:'C#'},{pos:1,note:'D#'},
-    {pos:3,note:'F#'},{pos:4,note:'G#'},{pos:5,note:'A#'},
-    {pos:7,note:'C#'},{pos:8,note:'D#'},
-    {pos:10,note:'F#'},{pos:11,note:'G#'},{pos:12,note:'A#'},
-  ];
-
-  // Normalize highlight note to sharp name
-  const FLAT_TO_SHARP = {
-    'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B'
-  };
-  const normHighlight = FLAT_TO_SHARP[highlightNote] || highlightNote;
-
-  const W  = 28, WH = 90, BW = 18, BH = 56;
-  const totalW = WHITE_NOTES.length * W;
-
-  let svg = `<svg class="pitch-piano-svg" viewBox="0 0 ${totalW} ${WH}" xmlns="http://www.w3.org/2000/svg">`;
-
-  // White keys
-  WHITE_NOTES.forEach((note, i) => {
-    const isLit  = note === normHighlight;
-    const fill   = isLit ? '#f5c842' : '#f0ede6';
-    svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}"
-      fill="${fill}" stroke="#555" stroke-width="1" rx="2"/>`;
-    if (isLit) {
-      svg += `<text x="${i*W + W/2}" y="${WH-8}" text-anchor="middle"
-        font-size="8" font-family="IBM Plex Mono, monospace"
-        font-weight="600" fill="#000">${note}</text>`;
-    }
-  });
-
-  // Black keys
-  BLACK_KEYS.forEach(({pos, note}) => {
-    const isLit = note === normHighlight;
-    const fill  = isLit ? '#f5c842' : '#1a1a1a';
-    const x     = pos * W + W - BW / 2;
-    svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}"
-      fill="${fill}" stroke="#000" stroke-width="1" rx="2"/>`;
-    if (isLit) {
-      svg += `<text x="${x + BW/2}" y="${BH-5}" text-anchor="middle"
-        font-size="7" font-family="IBM Plex Mono, monospace"
-        font-weight="600" fill="#000">${note}</text>`;
-    }
-  });
-
-  svg += '</svg>';
-  return svg;
-}
-
-// ─── Score ────────────────────────────────────────────────────────────────────
 
 function updatePitchScore() {
   document.getElementById('ptScoreVal').textContent  = ptScore;
   document.getElementById('ptTotalVal').textContent  = ptTotal;
   document.getElementById('ptStreakVal').textContent = ptStreak;
-  const acc = ptTotal > 0 ? Math.round((ptScore / ptTotal) * 100) + '%' : '—';
-  document.getElementById('ptAccVal').textContent    = acc;
+  document.getElementById('ptAccVal').textContent    =
+    ptTotal > 0 ? Math.round((ptScore / ptTotal) * 100) + '%' : '—';
+}
+
+function buildPitchPianoSVG(highlightNote) {
+  const WHITE_NOTES = ['C','D','E','F','G','A','B','C','D','E','F','G','A','B'];
+  const BLACK_KEYS  = [
+    {pos:0,note:'C#'},{pos:1,note:'D#'},{pos:3,note:'F#'},{pos:4,note:'G#'},{pos:5,note:'A#'},
+    {pos:7,note:'C#'},{pos:8,note:'D#'},{pos:10,note:'F#'},{pos:11,note:'G#'},{pos:12,note:'A#'},
+  ];
+  const F2S = { 'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B' };
+  const norm = F2S[highlightNote] || highlightNote;
+  const W = 28, WH = 90, BW = 18, BH = 56, totalW = WHITE_NOTES.length * W;
+  let svg = `<svg class="pitch-piano-svg" viewBox="0 0 ${totalW} ${WH}" xmlns="http://www.w3.org/2000/svg">`;
+  WHITE_NOTES.forEach((note, i) => {
+    const lit = note === norm;
+    svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}" fill="${lit?'#f5c842':'#f0ede6'}" stroke="#555" stroke-width="1" rx="2"/>`;
+    if (lit) svg += `<text x="${i*W+W/2}" y="${WH-8}" text-anchor="middle" font-size="8" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000">${note}</text>`;
+  });
+  BLACK_KEYS.forEach(({pos, note}) => {
+    const lit = note === norm;
+    const x   = pos * W + W - BW / 2;
+    svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}" fill="${lit?'#f5c842':'#1a1a1a'}" stroke="#000" stroke-width="1" rx="2"/>`;
+    if (lit) svg += `<text x="${x+BW/2}" y="${BH-5}" text-anchor="middle" font-size="7" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000">${note}</text>`;
+  });
+  svg += '</svg>';
+  return svg;
 }
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
