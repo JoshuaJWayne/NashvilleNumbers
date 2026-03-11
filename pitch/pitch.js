@@ -31,16 +31,16 @@ let pitchSynth      = null;
 
 function getPitchSynth() {
   if (!pitchSynth) {
-	pitchSynth = new Tone.Synth({
-	  oscillator: { type: 'sine' },
-	  envelope: {
-		attack:  0.005,
-		decay:   1.4,
-		sustain: 0.0,
-		release: 1.8,
-	  },
-	  volume: -4,
-	}).toDestination();
+    pitchSynth = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: {
+        attack:  0.005,
+        decay:   1.4,
+        sustain: 0.0,
+        release: 1.8,
+      },
+      volume: -4,
+    }).toDestination();
   }
   return pitchSynth;
 }
@@ -118,9 +118,9 @@ function newPitchQuestion() {
   area.innerHTML = '';
 
   if (currentAnsMode === 'multiple') {
-	buildPitchMultipleChoice(area);
+    buildPitchMultipleChoice(area);
   } else {
-	buildPitchTypeInput(area);
+    buildPitchTypeInput(area);
   }
 
   // Auto-play the note after a short delay
@@ -141,8 +141,8 @@ async function replayNote() {
   await playNote(currentNote, currentOctave);
 
   setTimeout(() => {
-	playBtn.classList.remove('playing');
-	document.getElementById('playBtnLabel').textContent = 'Replay Note';
+    playBtn.classList.remove('playing');
+    document.getElementById('playBtnLabel').textContent = 'Replay Note';
   }, 1600);
 }
 
@@ -155,19 +155,19 @@ function buildPitchMultipleChoice(area) {
 
   // Always include the correct answer
   if (!options.includes(currentNote)) {
-	options[0] = currentNote;
-	shuffle(options);
+    options[0] = currentNote;
+    shuffle(options);
   }
 
   const grid = document.createElement('div');
   grid.className = 'pitch-choices';
 
   options.forEach(note => {
-	const btn = document.createElement('button');
-	btn.className   = 'pitch-choice-btn';
-	btn.textContent = NOTE_DISPLAY[note] || note;
-	btn.onclick     = () => checkPitchAnswer(note, btn, grid);
-	grid.appendChild(btn);
+    const btn = document.createElement('button');
+    btn.className   = 'pitch-choice-btn';
+    btn.textContent = NOTE_DISPLAY[note] || note;
+    btn.onclick     = () => checkPitchAnswer(note, btn, grid);
+    grid.appendChild(btn);
   });
 
   area.appendChild(grid);
@@ -203,29 +203,29 @@ function buildPitchTypeInput(area) {
 
   // Symbol helper for sharps/flats
   if (currentDiff !== 'natural') {
-	const toolbar = document.createElement('div');
-	toolbar.className = 'symbol-toolbar';
+    const toolbar = document.createElement('div');
+    toolbar.className = 'symbol-toolbar';
 
-	const lbl = document.createElement('span');
-	lbl.className   = 'symbol-toolbar-label';
-	lbl.textContent = 'Insert:';
-	toolbar.appendChild(lbl);
+    const lbl = document.createElement('span');
+    lbl.className   = 'symbol-toolbar-label';
+    lbl.textContent = 'Insert:';
+    toolbar.appendChild(lbl);
 
-	[{ char:'#', label:'Sharp' }, { char:'b', label:'Flat (♭)' }].forEach(({ char, label }) => {
-	  const s = document.createElement('button');
-	  s.className = 'sym-btn';
-	  s.type      = 'button';
-	  s.innerHTML = `${char}<span class="sym-tooltip">${label}</span>`;
-	  s.onclick   = () => {
-		inp.focus();
-		const start = inp.selectionStart, end = inp.selectionEnd;
-		inp.value = inp.value.slice(0, start) + char + inp.value.slice(end);
-		inp.setSelectionRange(start + 1, start + 1);
-	  };
-	  toolbar.appendChild(s);
-	});
+    [{ char:'#', label:'Sharp' }, { char:'b', label:'Flat (♭)' }].forEach(({ char, label }) => {
+      const s = document.createElement('button');
+      s.className = 'sym-btn';
+      s.type      = 'button';
+      s.innerHTML = `${char}<span class="sym-tooltip">${label}</span>`;
+      s.onclick   = () => {
+        inp.focus();
+        const start = inp.selectionStart, end = inp.selectionEnd;
+        inp.value = inp.value.slice(0, start) + char + inp.value.slice(end);
+        inp.setSelectionRange(start + 1, start + 1);
+      };
+      toolbar.appendChild(s);
+    });
 
-	area.appendChild(toolbar);
+    area.appendChild(toolbar);
   }
 
   setTimeout(() => inp.focus(), 50);
@@ -241,24 +241,24 @@ function checkPitchAnswer(chosen, btn, grid) {
   const isCorrect = chosen === currentNote;
 
   if (isCorrect) {
-	ptScore++;
-	ptStreak++;
-	btn.classList.add('correct');
-	document.getElementById('ptCard').className = 'quiz-card correct';
-	showPitchFeedback(true);
+    ptScore++;
+    ptStreak++;
+    btn.classList.add('correct');
+    document.getElementById('ptCard').className = 'quiz-card correct';
+    showPitchFeedback(true);
   } else {
-	ptStreak = 0;
-	btn.classList.add('wrong');
-	document.getElementById('ptCard').className = 'quiz-card wrong';
-	document.getElementById('ptCard').classList.add('shake');
-	setTimeout(() => document.getElementById('ptCard').classList.remove('shake'), 400);
-	// Highlight the correct answer
-	grid.querySelectorAll('.pitch-choice-btn').forEach(b => {
-	  if ((NOTE_DISPLAY[currentNote] || currentNote) === b.textContent.trim()) {
-		b.classList.add('correct');
-	  }
-	});
-	showPitchFeedback(false);
+    ptStreak = 0;
+    btn.classList.add('wrong');
+    document.getElementById('ptCard').className = 'quiz-card wrong';
+    document.getElementById('ptCard').classList.add('shake');
+    setTimeout(() => document.getElementById('ptCard').classList.remove('shake'), 400);
+    // Highlight the correct answer
+    grid.querySelectorAll('.pitch-choice-btn').forEach(b => {
+      if ((NOTE_DISPLAY[currentNote] || currentNote) === b.textContent.trim()) {
+        b.classList.add('correct');
+      }
+    });
+    showPitchFeedback(false);
   }
 
   grid.querySelectorAll('.pitch-choice-btn').forEach(b => b.disabled = true);
@@ -282,16 +282,16 @@ function checkPitchType() {
   inp.disabled = true;
 
   if (isCorrect) {
-	ptScore++;
-	ptStreak++;
-	document.getElementById('ptCard').className = 'quiz-card correct';
-	showPitchFeedback(true);
+    ptScore++;
+    ptStreak++;
+    document.getElementById('ptCard').className = 'quiz-card correct';
+    showPitchFeedback(true);
   } else {
-	ptStreak = 0;
-	document.getElementById('ptCard').className = 'quiz-card wrong';
-	document.getElementById('ptCard').classList.add('shake');
-	setTimeout(() => document.getElementById('ptCard').classList.remove('shake'), 400);
-	showPitchFeedback(false);
+    ptStreak = 0;
+    document.getElementById('ptCard').className = 'quiz-card wrong';
+    document.getElementById('ptCard').classList.add('shake');
+    setTimeout(() => document.getElementById('ptCard').classList.remove('shake'), 400);
+    showPitchFeedback(false);
   }
 
   updatePitchScore();
@@ -302,7 +302,7 @@ function checkPitchType() {
 // Normalize: uppercase, treat 'b' suffix as flat → map to sharp equivalent
 function normalizePitchAnswer(str) {
   const FLAT_TO_SHARP = {
-	'db':'C#','eb':'D#','fb':'E','gb':'F#','ab':'G#','bb':'A#','cb':'B'
+    'db':'C#','eb':'D#','fb':'E','gb':'F#','ab':'G#','bb':'A#','cb':'B'
   };
   const cleaned = str.trim().toLowerCase().replace(/\s/g, '');
   if (FLAT_TO_SHARP[cleaned]) return FLAT_TO_SHARP[cleaned].toLowerCase();
@@ -314,11 +314,11 @@ function showPitchFeedback(correct) {
   fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
   const displayName = NOTE_DISPLAY[currentNote] || currentNote;
   document.getElementById('ptFeedbackAnswer').textContent =
-	correct
-	  ? `✓ Correct! The note was ${displayName}`
-	  : `✗ The note was ${displayName}`;
+    correct
+      ? `✓ Correct! The note was ${displayName}`
+      : `✗ The note was ${displayName}`;
   document.getElementById('ptFeedbackExpl').textContent =
-	`Octave ${currentOctave}  ·  ${BLACK_KEY_NOTES.has(currentNote) ? 'Black key' : 'White key'}`;
+    `Octave ${currentOctave}  ·  ${BLACK_KEY_NOTES.has(currentNote) ? 'Black key' : 'White key'}`;
 }
 
 // ─── Result Piano ─────────────────────────────────────────────────────────────
@@ -334,15 +334,15 @@ function buildPitchPianoSVG(highlightNote) {
   const CHROMATIC   = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
   const WHITE_NOTES = ['C','D','E','F','G','A','B','C','D','E','F','G','A','B'];
   const BLACK_KEYS  = [
-	{pos:0,note:'C#'},{pos:1,note:'D#'},
-	{pos:3,note:'F#'},{pos:4,note:'G#'},{pos:5,note:'A#'},
-	{pos:7,note:'C#'},{pos:8,note:'D#'},
-	{pos:10,note:'F#'},{pos:11,note:'G#'},{pos:12,note:'A#'},
+    {pos:0,note:'C#'},{pos:1,note:'D#'},
+    {pos:3,note:'F#'},{pos:4,note:'G#'},{pos:5,note:'A#'},
+    {pos:7,note:'C#'},{pos:8,note:'D#'},
+    {pos:10,note:'F#'},{pos:11,note:'G#'},{pos:12,note:'A#'},
   ];
 
   // Normalize highlight note to sharp name
   const FLAT_TO_SHARP = {
-	'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B'
+    'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B'
   };
   const normHighlight = FLAT_TO_SHARP[highlightNote] || highlightNote;
 
@@ -353,29 +353,29 @@ function buildPitchPianoSVG(highlightNote) {
 
   // White keys
   WHITE_NOTES.forEach((note, i) => {
-	const isLit  = note === normHighlight;
-	const fill   = isLit ? '#f5c842' : '#f0ede6';
-	svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}"
-	  fill="${fill}" stroke="#555" stroke-width="1" rx="2"/>`;
-	if (isLit) {
-	  svg += `<text x="${i*W + W/2}" y="${WH-8}" text-anchor="middle"
-		font-size="8" font-family="IBM Plex Mono, monospace"
-		font-weight="600" fill="#000">${note}</text>`;
-	}
+    const isLit  = note === normHighlight;
+    const fill   = isLit ? '#f5c842' : '#f0ede6';
+    svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}"
+      fill="${fill}" stroke="#555" stroke-width="1" rx="2"/>`;
+    if (isLit) {
+      svg += `<text x="${i*W + W/2}" y="${WH-8}" text-anchor="middle"
+        font-size="8" font-family="IBM Plex Mono, monospace"
+        font-weight="600" fill="#000">${note}</text>`;
+    }
   });
 
   // Black keys
   BLACK_KEYS.forEach(({pos, note}) => {
-	const isLit = note === normHighlight;
-	const fill  = isLit ? '#f5c842' : '#1a1a1a';
-	const x     = pos * W + W - BW / 2;
-	svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}"
-	  fill="${fill}" stroke="#000" stroke-width="1" rx="2"/>`;
-	if (isLit) {
-	  svg += `<text x="${x + BW/2}" y="${BH-5}" text-anchor="middle"
-		font-size="7" font-family="IBM Plex Mono, monospace"
-		font-weight="600" fill="#000">${note}</text>`;
-	}
+    const isLit = note === normHighlight;
+    const fill  = isLit ? '#f5c842' : '#1a1a1a';
+    const x     = pos * W + W - BW / 2;
+    svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}"
+      fill="${fill}" stroke="#000" stroke-width="1" rx="2"/>`;
+    if (isLit) {
+      svg += `<text x="${x + BW/2}" y="${BH-5}" text-anchor="middle"
+        font-size="7" font-family="IBM Plex Mono, monospace"
+        font-weight="600" fill="#000">${note}</text>`;
+    }
   });
 
   svg += '</svg>';
@@ -397,8 +397,8 @@ function updatePitchScore() {
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-	const j = Math.floor(Math.random() * (i + 1));
-	[a[i], a[j]] = [a[j], a[i]];
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }

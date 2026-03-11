@@ -5,348 +5,348 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pitch Ear Training — Nashville Numbers</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
-	/* ── Pitch-page-specific styles ── */
+    /* ── Pitch-page-specific styles ── */
 
-	.pitch-header {
-	  width: 100%;
-	  max-width: 700px;
-	  margin-bottom: 24px;
-	  text-align: center;
-	}
+    .pitch-header {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
 
-	.back-link {
-	  display: inline-flex;
-	  align-items: center;
-	  gap: 6px;
-	  font-family: 'IBM Plex Mono', monospace;
-	  font-size: 11px;
-	  letter-spacing: 2px;
-	  text-transform: uppercase;
-	  color: var(--muted);
-	  text-decoration: none;
-	  margin-bottom: 20px;
-	  transition: color 0.15s;
-	}
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 20px;
+      transition: color 0.15s;
+    }
 
-	.back-link:hover { color: var(--accent); }
+    .back-link:hover { color: var(--accent); }
 
-	.pitch-logo {
-	  font-family: 'Bebas Neue', sans-serif;
-	  font-size: clamp(36px, 7vw, 60px);
-	  letter-spacing: 3px;
-	  color: var(--accent);
-	  text-shadow: 4px 4px 0 #8a6e00;
-	  line-height: 1;
-	}
+    .pitch-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(36px, 7vw, 60px);
+      letter-spacing: 3px;
+      color: var(--accent);
+      text-shadow: 4px 4px 0 #8a6e00;
+      line-height: 1;
+    }
 
-	.pitch-subtitle {
-	  font-family: 'IBM Plex Mono', monospace;
-	  font-size: 11px;
-	  letter-spacing: 4px;
-	  text-transform: uppercase;
-	  color: var(--muted);
-	  margin-top: 6px;
-	}
+    .pitch-subtitle {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 6px;
+    }
 
-	/* Settings */
-	.pitch-settings {
-	  width: 100%;
-	  max-width: 700px;
-	  background: var(--surface);
-	  border: 1px solid var(--border);
-	  border-radius: 6px;
-	  padding: 18px 24px;
-	  margin-bottom: 20px;
-	  display: flex;
-	  gap: 20px;
-	  flex-wrap: wrap;
-	  align-items: flex-end;
-	}
+    /* Settings */
+    .pitch-settings {
+      width: 100%;
+      max-width: 700px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
 
-	/* Difficulty pills */
-	.difficulty-row {
-	  display: flex;
-	  gap: 8px;
-	  flex-wrap: wrap;
-	}
+    /* Difficulty pills */
+    .difficulty-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-	.diff-btn {
-	  background: var(--surface2);
-	  border: 1px solid var(--border);
-	  border-radius: 4px;
-	  color: #fff;
-	  font-family: 'IBM Plex Mono', monospace;
-	  font-size: 11px;
-	  letter-spacing: 1px;
-	  padding: 6px 14px;
-	  cursor: pointer;
-	  transition: all 0.15s;
-	  user-select: none;
-	}
+    .diff-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #fff;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
 
-	.diff-btn.active {
-	  background: var(--accent);
-	  border-color: var(--accent);
-	  color: #000;
-	  font-weight: 600;
-	}
+    .diff-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 600;
+    }
 
-	/* Score bar (reuse .scorebar from style.css) */
+    /* Score bar (reuse .scorebar from style.css) */
 
-	/* Play button */
-	.play-note-btn {
-	  display: flex;
-	  align-items: center;
-	  justify-content: center;
-	  gap: 12px;
-	  width: 100%;
-	  max-width: 700px;
-	  background: var(--surface);
-	  border: 2px solid var(--accent);
-	  border-radius: 6px;
-	  color: var(--accent);
-	  font-family: 'Bebas Neue', sans-serif;
-	  font-size: 26px;
-	  letter-spacing: 3px;
-	  padding: 20px;
-	  cursor: pointer;
-	  transition: all 0.15s;
-	  margin-bottom: 20px;
-	}
+    /* Play button */
+    .play-note-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 700px;
+      background: var(--surface);
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      color: var(--accent);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 3px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 20px;
+    }
 
-	.play-note-btn:hover {
-	  background: var(--accent);
-	  color: #000;
-	}
+    .play-note-btn:hover {
+      background: var(--accent);
+      color: #000;
+    }
 
-	.play-note-btn.playing {
-	  background: var(--accent);
-	  color: #000;
-	  animation: pulse 0.6s ease infinite alternate;
-	}
+    .play-note-btn.playing {
+      background: var(--accent);
+      color: #000;
+      animation: pulse 0.6s ease infinite alternate;
+    }
 
-	@keyframes pulse {
-	  from { box-shadow: 0 0 0 0 rgba(245,200,66,0.4); }
-	  to   { box-shadow: 0 0 0 12px rgba(245,200,66,0); }
-	}
+    @keyframes pulse {
+      from { box-shadow: 0 0 0 0 rgba(245,200,66,0.4); }
+      to   { box-shadow: 0 0 0 12px rgba(245,200,66,0); }
+    }
 
-	.play-icon { font-size: 28px; }
+    .play-icon { font-size: 28px; }
 
-	/* Quiz card reuse */
+    /* Quiz card reuse */
 
-	/* Answer grid for multiple choice — 3 or 4 wide */
-	.pitch-choices {
-	  display: grid;
-	  grid-template-columns: repeat(3, 1fr);
-	  gap: 10px;
-	  margin-top: 4px;
-	}
+    /* Answer grid for multiple choice — 3 or 4 wide */
+    .pitch-choices {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
 
-	@media (max-width: 480px) {
-	  .pitch-choices { grid-template-columns: repeat(2, 1fr); }
-	}
+    @media (max-width: 480px) {
+      .pitch-choices { grid-template-columns: repeat(2, 1fr); }
+    }
 
-	.pitch-choice-btn {
-	  background: var(--surface2);
-	  border: 1px solid var(--border);
-	  border-radius: 5px;
-	  color: var(--text);
-	  font-family: 'IBM Plex Mono', monospace;
-	  font-size: 18px;
-	  font-weight: 600;
-	  padding: 18px 10px;
-	  cursor: pointer;
-	  transition: all 0.15s;
-	  letter-spacing: 1px;
-	  text-align: center;
-	}
+    .pitch-choice-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+      padding: 18px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 1px;
+      text-align: center;
+    }
 
-	.pitch-choice-btn:hover:not(:disabled) {
-	  border-color: var(--accent);
-	  background: #242200;
-	  transform: translateY(-1px);
-	}
+    .pitch-choice-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: #242200;
+      transform: translateY(-1px);
+    }
 
-	.pitch-choice-btn.correct {
-	  background: #0d2b1a;
-	  border-color: var(--correct);
-	  color: var(--correct);
-	}
+    .pitch-choice-btn.correct {
+      background: #0d2b1a;
+      border-color: var(--correct);
+      color: var(--correct);
+    }
 
-	.pitch-choice-btn.wrong {
-	  background: #2b0d0d;
-	  border-color: var(--wrong);
-	  color: var(--wrong);
-	}
+    .pitch-choice-btn.wrong {
+      background: #2b0d0d;
+      border-color: var(--wrong);
+      color: var(--wrong);
+    }
 
-	/* Type input (reuses .type-input-row from style.css) */
+    /* Type input (reuses .type-input-row from style.css) */
 
-	/* Answer mode toggle */
-	.answer-mode-tabs {
-	  display: flex;
-	  width: 100%;
-	  margin-bottom: 16px;
-	  border-radius: 5px;
-	  overflow: hidden;
-	  border: 1px solid var(--border);
-	}
+    /* Answer mode toggle */
+    .answer-mode-tabs {
+      display: flex;
+      width: 100%;
+      margin-bottom: 16px;
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
 
-	.answer-mode-tab {
-	  flex: 1;
-	  background: var(--surface);
-	  border: none;
-	  color: var(--muted);
-	  font-family: 'IBM Plex Mono', monospace;
-	  font-size: 10px;
-	  letter-spacing: 2px;
-	  text-transform: uppercase;
-	  padding: 9px 6px;
-	  cursor: pointer;
-	  transition: all 0.15s;
-	  text-align: center;
-	}
+    .answer-mode-tab {
+      flex: 1;
+      background: var(--surface);
+      border: none;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 9px 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
 
-	.answer-mode-tab + .answer-mode-tab {
-	  border-left: 1px solid var(--border);
-	}
+    .answer-mode-tab + .answer-mode-tab {
+      border-left: 1px solid var(--border);
+    }
 
-	.answer-mode-tab.active {
-	  background: var(--accent);
-	  color: #000;
-	  font-weight: 600;
-	}
+    .answer-mode-tab.active {
+      background: var(--accent);
+      color: #000;
+      font-weight: 600;
+    }
 
-	/* Result piano */
-	.result-piano-wrap {
-	  margin-top: 20px;
-	  display: none;
-	}
+    /* Result piano */
+    .result-piano-wrap {
+      margin-top: 20px;
+      display: none;
+    }
 
-	.result-piano-wrap.show { display: block; }
+    .result-piano-wrap.show { display: block; }
 
-	.result-piano-label {
-	  font-family: 'IBM Plex Mono', monospace;
-	  font-size: 10px;
-	  letter-spacing: 3px;
-	  text-transform: uppercase;
-	  color: var(--muted);
-	  margin-bottom: 10px;
-	}
+    .result-piano-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
 
-	.pitch-piano-svg {
-	  display: block;
-	  width: 100%;
-	  max-width: 520px;
-	  height: auto;
-	  min-width: 280px;
-	}
+    .pitch-piano-svg {
+      display: block;
+      width: 100%;
+      max-width: 520px;
+      height: auto;
+      min-width: 280px;
+    }
 
-	/* Replay hint */
-	.replay-hint {
-	  font-family: 'IBM Plex Mono', monospace;
-	  font-size: 11px;
-	  color: var(--muted);
-	  text-align: center;
-	  margin-bottom: 16px;
-	  letter-spacing: 1px;
-	}
+    /* Replay hint */
+    .replay-hint {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+    }
 
-	.replay-hint span {
-	  color: var(--accent);
-	  cursor: pointer;
-	}
+    .replay-hint span {
+      color: var(--accent);
+      cursor: pointer;
+    }
 
-	.replay-hint span:hover { text-decoration: underline; }
+    .replay-hint span:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
   <div class="pitch-header">
-	<a href="../index.html" class="back-link">← Back to Nashville Quiz</a>
-	<div class="pitch-logo">Pitch Ear Training</div>
-	<div class="pitch-subtitle">Identify the note you hear</div>
+    <a href="index.html" class="back-link">← Back to Nashville Quiz</a>
+    <div class="pitch-logo">Pitch Ear Training</div>
+    <div class="pitch-subtitle">Identify the note you hear</div>
 
-	<div class="scorebar" style="margin-top:18px;">
-	  <div class="score-pill">
-		<span>Score</span>
-		<span class="val" id="ptScoreVal">0</span>
-	  </div>
-	  <div class="score-pill">
-		<span>Total</span>
-		<span class="val" id="ptTotalVal">0</span>
-	  </div>
-	  <div class="score-pill streak">
-		<span>Streak</span>
-		<span class="val" id="ptStreakVal">0</span>🔥
-	  </div>
-	  <div class="score-pill">
-		<span>Accuracy</span>
-		<span class="val" id="ptAccVal">—</span>
-	  </div>
-	</div>
+    <div class="scorebar" style="margin-top:18px;">
+      <div class="score-pill">
+        <span>Score</span>
+        <span class="val" id="ptScoreVal">0</span>
+      </div>
+      <div class="score-pill">
+        <span>Total</span>
+        <span class="val" id="ptTotalVal">0</span>
+      </div>
+      <div class="score-pill streak">
+        <span>Streak</span>
+        <span class="val" id="ptStreakVal">0</span>🔥
+      </div>
+      <div class="score-pill">
+        <span>Accuracy</span>
+        <span class="val" id="ptAccVal">—</span>
+      </div>
+    </div>
   </div>
 
   <!-- Settings -->
   <div class="pitch-settings">
-	<div class="setting-group">
-	  <label>Difficulty</label>
-	  <div class="difficulty-row" id="diffRow">
-		<button class="diff-btn active" data-diff="natural" onclick="setDifficulty('natural', this)">Natural Notes</button>
-		<button class="diff-btn" data-diff="sharps" onclick="setDifficulty('sharps', this)">+ Sharps/Flats</button>
-		<button class="diff-btn" data-diff="all" onclick="setDifficulty('all', this)">All 12 Notes</button>
-	  </div>
-	</div>
-	<div class="setting-group">
-	  <label>Octave Range</label>
-	  <select id="octaveRange" onchange="newPitchQuestion()">
-		<option value="4">Octave 4 only</option>
-		<option value="45" selected>Octaves 4 & 5</option>
-		<option value="345">Octaves 3, 4 & 5</option>
-	  </select>
-	</div>
+    <div class="setting-group">
+      <label>Difficulty</label>
+      <div class="difficulty-row" id="diffRow">
+        <button class="diff-btn active" data-diff="natural" onclick="setDifficulty('natural', this)">Natural Notes</button>
+        <button class="diff-btn" data-diff="sharps" onclick="setDifficulty('sharps', this)">+ Sharps/Flats</button>
+        <button class="diff-btn" data-diff="all" onclick="setDifficulty('all', this)">All 12 Notes</button>
+      </div>
+    </div>
+    <div class="setting-group">
+      <label>Octave Range</label>
+      <select id="octaveRange" onchange="newPitchQuestion()">
+        <option value="4">Octave 4 only</option>
+        <option value="45" selected>Octaves 4 & 5</option>
+        <option value="345">Octaves 3, 4 & 5</option>
+      </select>
+    </div>
   </div>
 
   <!-- Progress bar -->
   <div class="progress-wrap" style="width:100%;max-width:700px;margin-bottom:16px;">
-	<div class="progress-bar" id="ptProgressBar" style="width:0%"></div>
+    <div class="progress-bar" id="ptProgressBar" style="width:0%"></div>
   </div>
 
   <!-- Play button -->
   <button class="play-note-btn" id="playNoteBtn" onclick="replayNote()">
-	<span class="play-icon">♪</span>
-	<span id="playBtnLabel">Play Note</span>
+    <span class="play-icon">♪</span>
+    <span id="playBtnLabel">Play Note</span>
   </button>
 
   <!-- Quiz Card -->
   <div class="quiz-card" id="ptCard" style="width:100%;max-width:700px;">
-	<div class="question-meta">
-	  <span class="question-type" id="ptQType">IDENTIFY THE NOTE</span>
-	  <span id="ptQCount">Q 1</span>
-	</div>
+    <div class="question-meta">
+      <span class="question-type" id="ptQType">IDENTIFY THE NOTE</span>
+      <span id="ptQCount">Q 1</span>
+    </div>
 
-	<!-- Answer mode toggle -->
-	<div class="answer-mode-tabs">
-	  <button class="answer-mode-tab active" id="amtMultiple" onclick="setAnswerMode('multiple')">Multiple Choice</button>
-	  <button class="answer-mode-tab" id="amtType" onclick="setAnswerMode('type')">Type Answer</button>
-	</div>
+    <!-- Answer mode toggle -->
+    <div class="answer-mode-tabs">
+      <button class="answer-mode-tab active" id="amtMultiple" onclick="setAnswerMode('multiple')">Multiple Choice</button>
+      <button class="answer-mode-tab" id="amtType" onclick="setAnswerMode('type')">Type Answer</button>
+    </div>
 
-	<div id="ptAnswerArea"></div>
+    <div id="ptAnswerArea"></div>
 
-	<!-- Feedback -->
-	<div class="feedback" id="ptFeedback">
-	  <div class="correct-answer" id="ptFeedbackAnswer"></div>
-	  <div class="explanation" id="ptFeedbackExpl"></div>
-	</div>
+    <!-- Feedback -->
+    <div class="feedback" id="ptFeedback">
+      <div class="correct-answer" id="ptFeedbackAnswer"></div>
+      <div class="explanation" id="ptFeedbackExpl"></div>
+    </div>
 
-	<!-- Piano result -->
-	<div class="result-piano-wrap" id="resultPianoWrap">
-	  <div class="result-piano-label">Note on keyboard</div>
-	  <div id="resultPianoSVG"></div>
-	</div>
+    <!-- Piano result -->
+    <div class="result-piano-wrap" id="resultPianoWrap">
+      <div class="result-piano-label">Note on keyboard</div>
+      <div id="resultPianoSVG"></div>
+    </div>
 
-	<button class="next-btn" id="ptNextBtn" onclick="newPitchQuestion()">Next Note →</button>
+    <button class="next-btn" id="ptNextBtn" onclick="newPitchQuestion()">Next Note →</button>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
