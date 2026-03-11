@@ -150,24 +150,12 @@ function buildScaleRefs(rootNote, rootOctave, refCount) {
   });
 }
 
-function pickMysteryInScale(rootNote, rootOctave, refCount, notePool) {
-  const rootIdx    = noteToIdx(rootNote);
-  const scaleNotes = MAJOR_SCALE_INTERVALS.map(s => CHROMATIC[(rootIdx + s) % 12]);
-  const poolNorm   = notePool.map(n => ENHARMONIC[n] || n);
-  const inScale    = poolNorm.filter(n => scaleNotes.includes(n));
-  const candidates = (inScale.length > 0 ? inScale : poolNorm);
-
-  // Avoid repeating the last reference note
-  const lastRef = refCount > 0
-    ? CHROMATIC[(rootIdx + MAJOR_SCALE_INTERVALS[refCount - 1]) % 12]
-    : null;
-  const filtered = candidates.filter(n => n !== lastRef);
-  const pool     = filtered.length > 0 ? filtered : candidates;
-
-  const note   = pool[Math.floor(Math.random() * pool.length)];
-  const nIdx   = noteToIdx(note);
-  const octave = nIdx < noteToIdx(rootNote) ? rootOctave + 1 : rootOctave;
-  return { note, octave };
+// Pick the mystery note directly from the reference notes that were played,
+// avoiding the very last one (since it's still fresh in memory).
+function pickMysteryFromRefs(refs) {
+  if (refs.length === 1) return refs[0];
+  const candidates = refs.slice(0, -1); // exclude last ref note
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 // ─── Question Generation ──────────────────────────────────────────────────────
@@ -234,7 +222,7 @@ function newPitchQuestion() {
     seqRootNote = NATURAL_NOTES[Math.floor(Math.random() * NATURAL_NOTES.length)];
     seqRefNotes = buildScaleRefs(seqRootNote, baseOctave, refCount);
 
-    const mystery  = pickMysteryInScale(seqRootNote, baseOctave, refCount, pool);
+    const mystery  = pickMysteryFromRefs(seqRefNotes);
     currentNote    = mystery.note;
     currentOctave  = mystery.octave;
 
