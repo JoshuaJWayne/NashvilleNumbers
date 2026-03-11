@@ -14,7 +14,7 @@ const BLACK_KEY_NOTES = new Set(['C#','D#','F#','G#','A#']);
 const MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
 
 // Reference note counts per difficulty in sequence mode
-const SEQ_REF_COUNT = { natural: 5, sharps: 3, all: 1 };
+const SEQ_REF_COUNT = { natural: 3, sharps: 5, all: 0 };
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -97,9 +97,9 @@ function setTrainMode(mode) {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 const DIFF_HINTS = {
-  natural: 'Natural notes only · 5 reference notes in context mode',
-  sharps:  'Natural + sharps/flats · 3 reference notes in context mode',
-  all:     'All 12 chromatic notes · 1 reference note in context mode',
+  natural: 'Easy · 3 reference notes played, then guess one of them',
+  sharps:  'Medium · 5 reference notes played, then guess one of them',
+  all:     'Hard · no reference notes — identify the mystery note cold',
 };
 
 function setDifficulty(diff, btn) {
@@ -213,7 +213,6 @@ function newPitchQuestion() {
 
     const seqBtn = document.getElementById('playSeqBtn');
     seqBtn.classList.remove('playing');
-    document.getElementById('playSeqBtnLabel').textContent = 'Play Sequence';
 
     const refCount   = SEQ_REF_COUNT[currentDiff] ?? 3;
     const baseOctave = octaves[0] || 4;
@@ -221,12 +220,21 @@ function newPitchQuestion() {
     seqRootNote = NATURAL_NOTES[Math.floor(Math.random() * NATURAL_NOTES.length)];
     seqRefNotes = buildScaleRefs(seqRootNote, baseOctave, refCount);
 
-    const mystery  = pickMysteryFromRefs(seqRefNotes);
-    currentNote    = mystery.note;
-    currentOctave  = mystery.octave;
-
-    document.getElementById('refsCountBadge').innerHTML =
-      `<span>${refCount}</span> reference note${refCount !== 1 ? 's' : ''} from <span>${seqRootNote} major</span> · then guess the mystery note`;
+    if (refCount === 0) {
+      // Hard mode — no references, just a single mystery note from the pool
+      currentNote   = pool[Math.floor(Math.random() * pool.length)];
+      currentOctave = baseOctave;
+      document.getElementById('playSeqBtnLabel').textContent = 'Play Note';
+      document.getElementById('refsCountBadge').innerHTML =
+        `<span>Hard mode</span> · no reference notes — identify the mystery note cold`;
+    } else {
+      const mystery = pickMysteryFromRefs(seqRefNotes);
+      currentNote   = mystery.note;
+      currentOctave = mystery.octave;
+      document.getElementById('playSeqBtnLabel').textContent = 'Play Sequence';
+      document.getElementById('refsCountBadge').innerHTML =
+        `<span>${refCount}</span> reference note${refCount !== 1 ? 's' : ''} from <span>${seqRootNote} major</span> · then guess the mystery note`;
+    }
 
     renderSeqDisplay(refCount);
 
@@ -245,6 +253,24 @@ function newPitchQuestion() {
 function renderSeqDisplay(refCount) {
   const display = document.getElementById('seqDisplay');
   display.innerHTML = '';
+
+  if (refCount === 0) {
+    // Hard mode — just show the mystery bubble, no refs
+    const wrap   = document.createElement('div');
+    wrap.className = 'seq-note';
+    const bubble = document.createElement('div');
+    bubble.className   = 'seq-note-bubble mystery';
+    bubble.id          = 'seq-bubble-0';
+    bubble.textContent = '?';
+    const lbl = document.createElement('div');
+    lbl.className   = 'seq-note-label';
+    lbl.style.color = 'var(--accent)';
+    lbl.textContent = 'what note is this?';
+    wrap.appendChild(bubble);
+    wrap.appendChild(lbl);
+    display.appendChild(wrap);
+    return;
+  }
 
   seqRefNotes.forEach((ref, i) => {
     if (i > 0) {
@@ -312,13 +338,29 @@ async function replaySequence() {
   const seqBtn = document.getElementById('playSeqBtn');
   seqBtn.classList.add('playing');
   document.getElementById('playSeqBtnLabel').textContent = 'Playing…';
-  const fullSeq = [
-    ...seqRefNotes.map(r => ({ note: r.note, octave: r.octave })),
-    { note: currentNote, octave: currentOctave },
-  ];
-  await playSequenceNotes(fullSeq, 0.9);
+
+  if (seqRefNotes.length === 0) {
+    // Hard mode — just play the single mystery note
+    await Tone.start();
+    seqIsPlaying = true;
+    setReplaySeqBtn(true);
+    highlightSeqBubble(0);
+    getPitchSynth().triggerAttackRelease(currentNote + currentOctave, '4n');
+    await new Promise(r => setTimeout(r, 900));
+    seqIsPlaying = false;
+    setReplaySeqBtn(false);
+    document.querySelectorAll('.seq-note-bubble').forEach(b => b.classList.remove('playing'));
+  } else {
+    const fullSeq = [
+      ...seqRefNotes.map(r => ({ note: r.note, octave: r.octave })),
+      { note: currentNote, octave: currentOctave },
+    ];
+    await playSequenceNotes(fullSeq, 0.9);
+  }
+
   seqBtn.classList.remove('playing');
-  document.getElementById('playSeqBtnLabel').textContent = 'Replay Sequence';
+  const label = seqRefNotes.length === 0 ? 'Replay Note' : 'Replay Sequence';
+  document.getElementById('playSeqBtnLabel').textContent = label;
 }
 
 // ─── Multiple Choice ──────────────────────────────────────────────────────────
@@ -460,7 +502,8 @@ function finishQuestion(isCorrect) {
 }
 
 function revealMysteryBubble() {
-  const bubble = document.getElementById(`seq-bubble-${seqRefNotes.length}`);
+  const idx    = seqRefNotes.length; // 0 in hard mode, refCount otherwise
+  const bubble = document.getElementById(`seq-bubble-${idx}`);
   if (!bubble) return;
   bubble.textContent = NOTE_DISPLAY[currentNote] || currentNote;
   bubble.classList.remove('mystery');
