@@ -420,9 +420,12 @@
     <div class="setting-group">
       <label>Difficulty</label>
       <div class="difficulty-row" id="diffRow">
-        <button class="diff-btn active" data-diff="natural" onclick="setDifficulty('natural', this)">Natural Notes</button>
-        <button class="diff-btn" data-diff="sharps" onclick="setDifficulty('sharps', this)">+ Sharps/Flats</button>
-        <button class="diff-btn" data-diff="all" onclick="setDifficulty('all', this)">All 12 Notes</button>
+        <button class="diff-btn active" data-diff="natural" onclick="setDifficulty('natural', this)">Easy</button>
+        <button class="diff-btn" data-diff="sharps" onclick="setDifficulty('sharps', this)">Medium</button>
+        <button class="diff-btn" data-diff="all" onclick="setDifficulty('all', this)">Hard</button>
+      </div>
+      <div id="diffHint" style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted);margin-top:8px;">
+        Natural notes · 5 reference notes in context mode
       </div>
     </div>
     <div class="setting-group">
@@ -441,7 +444,7 @@
   </div>
 
   <!-- Play + Next button row (outside card, always visible) -->
-  <div style="width:100%;max-width:700px;display:flex;gap:10px;margin-bottom:16px;">
+  <div style="width:100%;max-width:700px;display:flex;gap:10px;margin-bottom:8px;">
     <!-- Single note play button -->
     <button class="play-note-btn" id="playNoteBtn" onclick="replayNote()" style="flex:1;margin-bottom:0;">
       <span class="play-icon">♪</span>
@@ -452,8 +455,13 @@
       <span class="play-icon">♪</span>
       <span id="playSeqBtnLabel">Play Sequence</span>
     </button>
-    <!-- Next Note button always visible here -->
-    <button class="next-btn" id="ptNextBtnTop" onclick="newPitchQuestion()" style="flex:0 0 auto;padding:0 24px;font-size:16px;margin:0;opacity:0.35;pointer-events:none;">Next →</button>
+  </div>
+  <!-- Next Note button directly under play button -->
+  <div style="width:100%;max-width:700px;margin-bottom:16px;">
+    <button class="next-btn" id="ptNextBtnTop" onclick="newPitchQuestion()"
+      style="width:100%;opacity:0.35;pointer-events:none;margin:0;justify-content:center;">
+      Next Note →
+    </button>
   </div>
 
   <!-- Quiz Card -->

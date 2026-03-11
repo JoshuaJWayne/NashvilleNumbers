@@ -96,10 +96,18 @@ function setTrainMode(mode) {
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
+const DIFF_HINTS = {
+  natural: 'Natural notes only · 5 reference notes in context mode',
+  sharps:  'Natural + sharps/flats · 3 reference notes in context mode',
+  all:     'All 12 chromatic notes · 1 reference note in context mode',
+};
+
 function setDifficulty(diff, btn) {
   currentDiff = diff;
   document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  const hint = document.getElementById('diffHint');
+  if (hint) hint.textContent = DIFF_HINTS[diff] || '';
   newPitchQuestion();
 }
 
