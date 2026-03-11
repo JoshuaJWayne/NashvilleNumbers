@@ -443,26 +443,16 @@
     <div class="progress-bar" id="ptProgressBar" style="width:0%"></div>
   </div>
 
-  <!-- Sticky Play + Next bar -->
-  <div style="position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--bg);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;max-width:700px;margin:0 auto;">
-    <!-- Single note play button -->
-    <button class="play-note-btn" id="playNoteBtn" onclick="replayNote()" style="flex:1;margin-bottom:0;padding:14px 10px;font-size:18px;">
-      <span class="play-icon">♪</span>
-      <span id="playBtnLabel">Play Note</span>
-    </button>
-    <!-- Sequence play button (hidden in single mode) -->
-    <button class="play-note-btn" id="playSeqBtn" onclick="replaySequence()" style="flex:1;margin-bottom:0;padding:14px 10px;font-size:18px;display:none;">
-      <span class="play-icon">♪</span>
-      <span id="playSeqBtnLabel">Play Sequence</span>
-    </button>
-    <!-- Next Note always visible, dims until answered -->
-    <button class="next-btn" id="ptNextBtnTop" onclick="newPitchQuestion()"
-      style="flex:1;margin:0;opacity:0.35;pointer-events:none;justify-content:center;padding:14px 10px;font-size:18px;">
-      Next →
-    </button>
-  </div>
-  <!-- Spacer so sticky bar doesn't overlap content -->
-  <div style="height:80px;width:100%;max-width:700px;"></div>
+  <!-- Play button -->
+  <button class="play-note-btn" id="playNoteBtn" onclick="replayNote()">
+    <span class="play-icon">♪</span>
+    <span id="playBtnLabel">Play Note</span>
+  </button>
+  <!-- Sequence play button (hidden in single mode) -->
+  <button class="play-note-btn" id="playSeqBtn" onclick="replaySequence()" style="display:none;">
+    <span class="play-icon">♪</span>
+    <span id="playSeqBtnLabel">Play Sequence</span>
+  </button>
 
   <!-- Quiz Card -->
   <div class="quiz-card" id="ptCard" style="width:100%;max-width:700px;">

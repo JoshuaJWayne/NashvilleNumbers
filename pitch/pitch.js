@@ -182,8 +182,7 @@ function newPitchQuestion() {
 
   // Reset top Next button to dimmed/disabled state
   const topNext = document.getElementById('ptNextBtnTop');
-  topNext.style.opacity       = '0.35';
-  topNext.style.pointerEvents = 'none';
+  if (topNext) { topNext.style.opacity = '0.35'; topNext.style.pointerEvents = 'none'; }
 
   const pct = Math.min((ptScore / Math.max(ptTotal, 1)) * 100, 100);
   document.getElementById('ptProgressBar').style.width = pct + '%';
@@ -453,10 +452,11 @@ function finishQuestion(isCorrect) {
   showResultPiano();
   if (currentTrainMode === 'sequence') revealMysteryBubble();
   document.getElementById('ptNextBtn').className = 'next-btn show';
-  // Enable the top Next button
+  // Enable the top Next button if present
   const topNext = document.getElementById('ptNextBtnTop');
-  topNext.style.opacity       = '1';
-  topNext.style.pointerEvents = 'auto';
+  if (topNext) { topNext.style.opacity = '1'; topNext.style.pointerEvents = 'auto'; }
+  // Scroll smoothly to the bottom so piano + Next Note button are visible
+  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 150);
 }
 
 function revealMysteryBubble() {
