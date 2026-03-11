@@ -440,11 +440,21 @@
     <div class="progress-bar" id="ptProgressBar" style="width:0%"></div>
   </div>
 
-  <!-- Single note play button (hidden in sequence mode) -->
-  <button class="play-note-btn" id="playNoteBtn" onclick="replayNote()">
-    <span class="play-icon">♪</span>
-    <span id="playBtnLabel">Play Note</span>
-  </button>
+  <!-- Play + Next button row (outside card, always visible) -->
+  <div style="width:100%;max-width:700px;display:flex;gap:10px;margin-bottom:16px;">
+    <!-- Single note play button -->
+    <button class="play-note-btn" id="playNoteBtn" onclick="replayNote()" style="flex:1;margin-bottom:0;">
+      <span class="play-icon">♪</span>
+      <span id="playBtnLabel">Play Note</span>
+    </button>
+    <!-- Sequence play button (hidden in single mode) -->
+    <button class="play-note-btn" id="playSeqBtn" onclick="replaySequence()" style="flex:1;margin-bottom:0;display:none;">
+      <span class="play-icon">♪</span>
+      <span id="playSeqBtnLabel">Play Sequence</span>
+    </button>
+    <!-- Next Note button always visible here -->
+    <button class="next-btn" id="ptNextBtnTop" onclick="newPitchQuestion()" style="flex:0 0 auto;padding:0 24px;font-size:16px;margin:0;opacity:0.35;pointer-events:none;">Next →</button>
+  </div>
 
   <!-- Quiz Card -->
   <div class="quiz-card" id="ptCard" style="width:100%;max-width:700px;">
@@ -463,9 +473,6 @@
     <div id="seqDisplayWrap" style="display:none;">
       <div class="refs-count-badge" id="refsCountBadge"></div>
       <div class="sequence-display" id="seqDisplay"></div>
-      <button class="replay-seq-btn" id="replaySeqBtn" onclick="replaySequence()">
-        ↺ Replay full sequence
-      </button>
     </div>
 
     <div id="ptAnswerArea"></div>
@@ -478,7 +485,7 @@
 
     <!-- Piano result -->
     <div class="result-piano-wrap" id="resultPianoWrap">
-      <div class="result-piano-label">Note on keyboard</div>
+      <div class="result-piano-label">Note on keyboard — click a key to hear it</div>
       <div id="resultPianoSVG"></div>
     </div>
 

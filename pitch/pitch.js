@@ -167,9 +167,10 @@ function pickMysteryInScale(rootNote, rootOctave, refCount, notePool) {
 function newPitchQuestion() {
   if (seqIsPlaying) return;
   ptAnswered = false;
+  const isFirstQuestion = ptQNum === 0;
   ptQNum++;
 
-  const pool   = getNotePool().map(n => ENHARMONIC[n] || n);
+  const pool    = getNotePool().map(n => ENHARMONIC[n] || n);
   const octaves = getOctavePool();
 
   currentNote   = pool[Math.floor(Math.random() * pool.length)];
@@ -183,6 +184,11 @@ function newPitchQuestion() {
   document.getElementById('resultPianoWrap').className = 'result-piano-wrap';
   document.getElementById('resultPianoSVG').innerHTML  = '';
 
+  // Reset top Next button to dimmed/disabled state
+  const topNext = document.getElementById('ptNextBtnTop');
+  topNext.style.opacity       = '0.35';
+  topNext.style.pointerEvents = 'none';
+
   const pct = Math.min((ptScore / Math.max(ptTotal, 1)) * 100, 100);
   document.getElementById('ptProgressBar').style.width = pct + '%';
 
@@ -190,8 +196,9 @@ function newPitchQuestion() {
   area.innerHTML = '';
 
   if (currentTrainMode === 'single') {
-    document.getElementById('ptQType').textContent      = 'IDENTIFY THE NOTE';
+    document.getElementById('ptQType').textContent       = 'IDENTIFY THE NOTE';
     document.getElementById('playNoteBtn').style.display = '';
+    document.getElementById('playSeqBtn').style.display  = 'none';
     document.getElementById('seqDisplayWrap').style.display = 'none';
 
     const playBtn = document.getElementById('playNoteBtn');
@@ -201,10 +208,17 @@ function newPitchQuestion() {
     if (currentAnsMode === 'multiple') buildPitchMultipleChoice(area);
     else buildPitchTypeInput(area);
 
+    if (!isFirstQuestion) setTimeout(() => replayNote(), 400);
+
   } else {
-    document.getElementById('ptQType').textContent      = 'NOTE IN CONTEXT';
+    document.getElementById('ptQType').textContent       = 'NOTE IN CONTEXT';
     document.getElementById('playNoteBtn').style.display = 'none';
+    document.getElementById('playSeqBtn').style.display  = '';
     document.getElementById('seqDisplayWrap').style.display = 'block';
+
+    const seqBtn = document.getElementById('playSeqBtn');
+    seqBtn.classList.remove('playing');
+    document.getElementById('playSeqBtnLabel').textContent = 'Play Sequence';
 
     const refCount   = SEQ_REF_COUNT[currentDiff] ?? 3;
     const baseOctave = octaves[0] || 4;
@@ -223,6 +237,8 @@ function newPitchQuestion() {
 
     if (currentAnsMode === 'multiple') buildPitchMultipleChoice(area);
     else buildPitchTypeInput(area);
+
+    if (!isFirstQuestion) setTimeout(() => replaySequence(), 400);
   }
 
   document.getElementById('ptCard').classList.add('pop');
@@ -298,11 +314,16 @@ async function replayNote() {
 
 async function replaySequence() {
   if (seqIsPlaying) return;
+  const seqBtn = document.getElementById('playSeqBtn');
+  seqBtn.classList.add('playing');
+  document.getElementById('playSeqBtnLabel').textContent = 'Playing…';
   const fullSeq = [
     ...seqRefNotes.map(r => ({ note: r.note, octave: r.octave })),
     { note: currentNote, octave: currentOctave },
   ];
   await playSequenceNotes(fullSeq, 0.9);
+  seqBtn.classList.remove('playing');
+  document.getElementById('playSeqBtnLabel').textContent = 'Replay Sequence';
 }
 
 // ─── Multiple Choice ──────────────────────────────────────────────────────────
@@ -436,6 +457,10 @@ function finishQuestion(isCorrect) {
   showResultPiano();
   if (currentTrainMode === 'sequence') revealMysteryBubble();
   document.getElementById('ptNextBtn').className = 'next-btn show';
+  // Enable the top Next button
+  const topNext = document.getElementById('ptNextBtnTop');
+  topNext.style.opacity       = '1';
+  topNext.style.pointerEvents = 'auto';
 }
 
 function revealMysteryBubble() {
@@ -484,27 +509,50 @@ function updatePitchScore() {
 
 function buildPitchPianoSVG(highlightNote) {
   const WHITE_NOTES = ['C','D','E','F','G','A','B','C','D','E','F','G','A','B'];
+  const WHITE_OCTAVES = [4,4,4,4,4,4,4,5,5,5,5,5,5,5];
   const BLACK_KEYS  = [
-    {pos:0,note:'C#'},{pos:1,note:'D#'},{pos:3,note:'F#'},{pos:4,note:'G#'},{pos:5,note:'A#'},
-    {pos:7,note:'C#'},{pos:8,note:'D#'},{pos:10,note:'F#'},{pos:11,note:'G#'},{pos:12,note:'A#'},
+    {pos:0,note:'C#',oct:4},{pos:1,note:'D#',oct:4},{pos:3,note:'F#',oct:4},{pos:4,note:'G#',oct:4},{pos:5,note:'A#',oct:4},
+    {pos:7,note:'C#',oct:5},{pos:8,note:'D#',oct:5},{pos:10,note:'F#',oct:5},{pos:11,note:'G#',oct:5},{pos:12,note:'A#',oct:5},
   ];
   const F2S = { 'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B' };
   const norm = F2S[highlightNote] || highlightNote;
   const W = 28, WH = 90, BW = 18, BH = 56, totalW = WHITE_NOTES.length * W;
-  let svg = `<svg class="pitch-piano-svg" viewBox="0 0 ${totalW} ${WH}" xmlns="http://www.w3.org/2000/svg">`;
+  let svg = `<svg class="pitch-piano-svg" viewBox="0 0 ${totalW} ${WH}" xmlns="http://www.w3.org/2000/svg" style="cursor:pointer;">`;
+
+  // White keys
   WHITE_NOTES.forEach((note, i) => {
     const lit = note === norm;
-    svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}" fill="${lit?'#f5c842':'#f0ede6'}" stroke="#555" stroke-width="1" rx="2"/>`;
-    if (lit) svg += `<text x="${i*W+W/2}" y="${WH-8}" text-anchor="middle" font-size="8" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000">${note}</text>`;
+    const oct = WHITE_OCTAVES[i];
+    const hover = `onmouseenter="this.setAttribute('fill','${lit ? '#ffd700' : '#ddd8cf'}')" onmouseleave="this.setAttribute('fill','${lit ? '#f5c842' : '#f0ede6'}')"`;
+    svg += `<rect x="${i*W}" y="0" width="${W-1}" height="${WH}"
+      fill="${lit ? '#f5c842' : '#f0ede6'}" stroke="#555" stroke-width="1" rx="2"
+      style="cursor:pointer" onclick="pitchPianoPlayNote('${note}',${oct})" ${hover}/>`;
+    if (lit) svg += `<text x="${i*W+W/2}" y="${WH-8}" text-anchor="middle"
+      font-size="8" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000"
+      style="pointer-events:none">${note}</text>`;
   });
-  BLACK_KEYS.forEach(({pos, note}) => {
+
+  // Black keys
+  BLACK_KEYS.forEach(({pos, note, oct}) => {
     const lit = note === norm;
     const x   = pos * W + W - BW / 2;
-    svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}" fill="${lit?'#f5c842':'#1a1a1a'}" stroke="#000" stroke-width="1" rx="2"/>`;
-    if (lit) svg += `<text x="${x+BW/2}" y="${BH-5}" text-anchor="middle" font-size="7" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000">${note}</text>`;
+    const hover = `onmouseenter="this.setAttribute('fill','${lit ? '#ffd700' : '#333'}')" onmouseleave="this.setAttribute('fill','${lit ? '#f5c842' : '#1a1a1a'}')"`;
+    svg += `<rect x="${x}" y="0" width="${BW}" height="${BH}"
+      fill="${lit ? '#f5c842' : '#1a1a1a'}" stroke="#000" stroke-width="1" rx="2"
+      style="cursor:pointer" onclick="pitchPianoPlayNote('${note}',${oct})" ${hover}/>`;
+    if (lit) svg += `<text x="${x+BW/2}" y="${BH-5}" text-anchor="middle"
+      font-size="7" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#000"
+      style="pointer-events:none">${note}</text>`;
   });
+
   svg += '</svg>';
   return svg;
+}
+
+// Called by onclick on SVG piano keys in the result piano
+async function pitchPianoPlayNote(note, octave) {
+  await Tone.start();
+  getPitchSynth().triggerAttackRelease(note + octave, '4n');
 }
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
